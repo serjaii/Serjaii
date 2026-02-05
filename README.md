@@ -6,7 +6,7 @@ Actualmente estoy desarrollando una **web personal** para compartir mis proyecto
 
 🎓 **Técnico Superior en Administración de Sistemas Informáticos en Red (ASIR)**  
 💻 Apasionado por las redes, la administración de sistemas y la ciberseguridad.  
-📍 Actualmente en busqueda de empresas para realizar mis prácticas de formación Dual.  
+📍 Realizando prácticas en NTT Data
 
 ---
 
