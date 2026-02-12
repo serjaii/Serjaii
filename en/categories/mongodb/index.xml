@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>MongoDB on SerjAii</title><link>http://sergiojimenez.org/en/categories/mongodb/</link><description>Recent content in MongoDB on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 09 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://sergiojimenez.org/en/categories/mongodb/index.xml" rel="self" type="application/rss+xml"/><item><title>Cooperative Practice: Full Deployment of Database Engines</title><link>http://sergiojimenez.org/en/post/practica-cooperativa-instalaciones/</link><pubDate>Tue, 09 Dec 2025 00:00:00 +0000</pubDate><guid>http://sergiojimenez.org/en/post/practica-cooperativa-instalaciones/</guid><description>&lt;img src="http://sergiojimenez.org/post/practica-cooperativa-instalaciones/cover.png" alt="Featured image of post Cooperative Practice: Full Deployment of Database Engines" /&gt;&lt;h1 id="cooperative-guide-to-database-installation-and-configuration"&gt;Cooperative Guide to Database Installation and Configuration
+&lt;/h1&gt;&lt;p&gt;This document collects the work done to set up various database management systems on &lt;strong&gt;Debian 13&lt;/strong&gt;. The steps for each differ.&lt;/p&gt;
+&lt;p&gt;This practice has been carried out by students Sergio Jiménez, José María Oteo, and David Dorante.&lt;/p&gt;
+&lt;h2 id="oracle-21c-installation-on-debian-13"&gt;Oracle 21c Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-pre-configuration-and-dependencies"&gt;1. Pre-configuration and dependencies
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;First, we will update system packages to avoid possible version conflicts during Oracle dependency installation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt upgrade -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We install Oracle dependencies on our system.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt policy libaio1t64 libaio-dev unixodbc rlwrap alien net-tools unzip bc ksh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Usage of each dependency:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;libaio1t64&lt;/strong&gt;: Asynchronous I/O dependency, mandatory for Oracle.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;libaio-dev&lt;/strong&gt;: contains header files and symbolic links for developers to compile programs using libaio.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;unixodbc&lt;/strong&gt;: ODBC libraries required by Oracle.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;rlwrap&lt;/strong&gt;: improves SQL*Plus terminal experience.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;bc&lt;/strong&gt;: calculations used by Oracle scripts.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;ksh&lt;/strong&gt;: KornShell, required by some installation scripts.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;alien&lt;/strong&gt;: converts .rpm package to .deb.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;net-tools&lt;/strong&gt;: includes netstat, used by Oracle.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;unzip&lt;/strong&gt;: for SQL*Plus later.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We configure a static IP to facilitate future remote connections.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;In hosts, we add an entry pointing to our private address.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Oracle and SQL*Plus need the &lt;code&gt;libaio.so.1&lt;/code&gt; library, which is not found in the system since the package and library names changed in Debian 13. To avoid errors when entering Oracle, we will create a symbolic link from &lt;code&gt;libaio1t64&lt;/code&gt; named &lt;code&gt;libaio.so.1&lt;/code&gt; so Oracle recognizes the library.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Check:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ ls -l /usr/lib/x86_64-linux-gnu/libaio.so.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lrwxrwxrwx &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; root root &lt;span style="color:#ae81ff"&gt;40&lt;/span&gt; oct &lt;span style="color:#ae81ff"&gt;8&lt;/span&gt; 20:22 /usr/lib/x86_64-linuxgnu/libaio.so.1 -&amp;gt; /usr/lib/x86_64-linux-gnu/libaio.so.1t64
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Possible Error: The alien process might require more than 2GB of space in &lt;code&gt;/tmp&lt;/code&gt;. If not available, we must increase that size.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We use the “alien” command to convert the .rpm package we just downloaded from Oracle 21c to .deb format, which Debian executes.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;After modifying the file extension to .deb, we manually install said Oracle package.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo dpkg -i oracle-database-ee-21c_1.02_amd64.deb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We execute the configuration script created by Oracle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo /etc/init.d/oracledb_ORCLCDB-21c configure
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;To avoid being asked for a username and password when entering Oracle, we will add our user, in my case &lt;code&gt;sergio&lt;/code&gt;, to the &lt;code&gt;dba&lt;/code&gt; group.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo usermod -aG dba $USER
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Once Oracle is installed, we must add the following environment variables to &lt;code&gt;.bashrc&lt;/code&gt; on the machine where we installed the server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ grep &lt;span style="color:#e6db74"&gt;&amp;#39;^export&amp;#39;&lt;/span&gt; ~/.bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export ORACLE_HOME&lt;span style="color:#f92672"&gt;=&lt;/span&gt;/opt/oracle/product/21c/dbhome_1
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export ORACLE_SID&lt;span style="color:#f92672"&gt;=&lt;/span&gt;ORCLCDB
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export ORACLE_BASE&lt;span style="color:#f92672"&gt;=&lt;/span&gt;/opt/oracle
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export LD_LIBRARY_PATH&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$ORACLE_HOME/lib:$LD_LIBRARY_PATH
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export PATH&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$ORACLE_HOME/bin:$PATH
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export NLS_LANG&lt;span style="color:#f92672"&gt;=&lt;/span&gt;SPANISH_SPAIN.AL32UTF8
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ alias alias sqlplus&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#39;rlwrap sqlplus&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Once variables are added, we reload bashrc to apply them.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ source ~/.bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We verify we can access the database as administrator.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sqlplus / as sysdba
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-create-user-and-grant-permissions-in-oracle-21c"&gt;3. Create User and Grant Permissions in Oracle 21c
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Optimization to allow user creation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; STARTUP;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; ALTER SESSION SET &lt;span style="color:#e6db74"&gt;&amp;#34;_ORACLE_SCRIPT&amp;#34;&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;true;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We create a user to test connections later and grant permissions.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; CREATE USER sergio IDENTIFIED BY sergio;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; GRANT ALL PRIVILEGES TO sergio;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;To start the service automatically on reboot, we modify crontab.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo crontab -e
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Access the database with the created user.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="4-oracle-server-configuration-for-remote-connection"&gt;4. Oracle Server Configuration for Remote Connection
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Oracle listens on localhost by default. We modify &lt;code&gt;listener.ora&lt;/code&gt; to listen to all requests.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /opt/oracle/homes/OraDBHome21cEE/network/admin/listener.ora
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We also modify &lt;code&gt;tnsnames.ora&lt;/code&gt;, as it indicates how the client connects. We modify the “HOST” value of “ORCLCDB”.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /opt/oracle/homes/OraDBHome21cEE/network/admin/tnsnames.ora
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Reboot to apply changes.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-installation-and-configuration-of-oracle-client-sqlplus"&gt;5. Installation and Configuration of Oracle Client (SQL*Plus)
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Update system packages.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Install dependencies required by SQL*Plus.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install libaio1t64 libaio-dev rlwrap wget p7zip-full -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create symbolic link again for Debian to recognize the package.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create a working folder.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ mkdir oracle
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ cd oracle
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Download packages for Basic and SQL*Plus.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget https://download.oracle.com/otn_software/linux/instantclient/2119000/instantclient-basic-linux.x64-21.19.0.0.0dbru.zip
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget https://download.oracle.com/otn_software/linux/instantclient/2119000/instantclient-sqlplus-linux.x64-21.19.0.0.0dbru.zip
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Unzip packages.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ 7z x instantclient-basic-linux.x64-21.19.0.0.0dbru.zip
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ 7z x instantclient-sqlplus-linux.x64-21.19.0.0.0dbru.zip
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add environment variables to &lt;code&gt;.bashrc&lt;/code&gt; and source it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano ~/.bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ source ~/.bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Connect to the server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sqlplus sergio/sergio@//192.168.122.79:1521/ORCLCDB
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="6-database-creation-with-tables-and-data-in-oracle"&gt;6. Database Creation with Tables and Data in Oracle
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Access as administrator.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sqlplus / as sysdba
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; ALTER SESSION SET &lt;span style="color:#e6db74"&gt;&amp;#34;_ORACLE_SCRIPT&amp;#34;&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;true;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create database and user.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; CREATE USER hotel IDENTIFIED BY hotel123;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SQL&amp;gt; GRANT ALL PRIVILEGES TO hotel;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Connect with new user.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sqlplus hotel/hotel123@//192.168.122.79:1521/ORCLCDB
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create tables (clients, rooms, reservations, payments) and insert data (omitted for brevity, same SQL structure as original).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="postgresql-server-installation-on-debian-13"&gt;PostgreSQL Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-pre-configuration-and-dependencies-1"&gt;1. Pre-configuration and dependencies
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Update packages.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation-1"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install postgresql package.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install postgresql -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Check status and enable service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ systemctl status postgresql
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl enable postgresql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Check access.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo -u postgres psql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-remote-connection-configuration"&gt;3. Remote Connection Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;postgresql.conf&lt;/code&gt; to set &lt;code&gt;listen_addresses = '*'&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/postgresql/17/main/postgresql.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;pg_hba.conf&lt;/code&gt; to allow remote connections.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/postgresql/17/main/pg_hba.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Restart service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl restart postgresql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="4-create-database-user-and-grant-permissions"&gt;4. Create Database, User and Grant Permissions
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Access as privileged user.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo -u postgres psql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create database, user and grant privileges.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;postgres&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#75715e"&gt;# CREATE DATABASE prueba_db;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;postgres&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#75715e"&gt;# CREATE ROLE sergio WITH LOGIN PASSWORD &amp;#39;sergio&amp;#39;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;postgres&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#75715e"&gt;# GRANT ALL PRIVILEGES ON DATABASE prueba_db TO sergio;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;postgres&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#75715e"&gt;# GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sergio;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Test local connection.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ psql -h localhost -p &lt;span style="color:#ae81ff"&gt;5432&lt;/span&gt; -U sergio -d prueba_db
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-client-installation"&gt;5. Client Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install postgresql-client.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install postgresql-client -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Test remote connection.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ psql -h 192.168.122.79 -p &lt;span style="color:#ae81ff"&gt;5432&lt;/span&gt; -U sergio -d prueba_db
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="6-creation-of-database-with-data"&gt;6. Creation of Database with Data
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create &amp;lsquo;hotel&amp;rsquo; database and tables (same structure as Oracle).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="mysql-server-installation-on-debian-13"&gt;MySQL Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-server-installation"&gt;1. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Update system.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Install MariaDB.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install mariadb-server -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Enable and check service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl status mariadb
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl enable mariadb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Check access.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo mysql -u root -p
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-remote-connection-configuration"&gt;2. Remote Connection Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;50-server.cnf&lt;/code&gt; to change bind-address.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Restart service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl restart mariadb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-create-user-and-database"&gt;3. Create User and Database
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create user allowing remote access.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;MariaDB [(&lt;span style="color:#66d9ef"&gt;none&lt;/span&gt;)]&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;USER&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;sergio&amp;#39;&lt;/span&gt;&lt;span style="color:#f92672"&gt;@&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#39;%&amp;#39;&lt;/span&gt; IDENTIFIED &lt;span style="color:#66d9ef"&gt;BY&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;sergio&amp;#39;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;MariaDB [(&lt;span style="color:#66d9ef"&gt;none&lt;/span&gt;)]&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;GRANT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;ALL&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;PRIVILEGES&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;ON&lt;/span&gt; &lt;span style="color:#f92672"&gt;*&lt;/span&gt;.&lt;span style="color:#f92672"&gt;*&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;sergio&amp;#39;&lt;/span&gt;&lt;span style="color:#f92672"&gt;@&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#39;%&amp;#39;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;WITH&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;GRANT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;OPTION&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="4-client-installation"&gt;4. Client Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install mariadb-client.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install mariadb-client -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Test connection.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ mysql -h 192.168.122.79 -P &lt;span style="color:#ae81ff"&gt;3306&lt;/span&gt; -u sergio -p
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-create-tables-and-data"&gt;5. Create Tables and Data
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create &amp;lsquo;hotel&amp;rsquo; database and populate tables.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="mongodb-server-installation-on-debian-13"&gt;MongoDB Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-dependencies-and-pre-configuration"&gt;1. Dependencies and Pre-configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install curl and gnupg.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install curl gnupg -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Download and add MongoDB GPG key.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg -dearmor -o /usr/share/keyrings/mongodbserver-8.0.gpg
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add MongoDB repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/usr/share/keyrings/mongodbserver-8.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/8.0 main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation-2"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install MongoDB.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install mongodb-org -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Start and enable service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl start mongod
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl enable mongod
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-remote-connection-configuration-1"&gt;3. Remote Connection Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;mongod.conf&lt;/code&gt; bindIp to 0.0.0.0.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/mongod.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Restart service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="4-create-database-and-user"&gt;4. Create Database and User
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create database and user with roles.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;use pruebadb
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;db.createUser&lt;span style="color:#f92672"&gt;({&lt;/span&gt; user: &lt;span style="color:#e6db74"&gt;&amp;#34;sergio&amp;#34;&lt;/span&gt;, pwd: &lt;span style="color:#e6db74"&gt;&amp;#34;sergio&amp;#34;&lt;/span&gt;, roles: &lt;span style="color:#f92672"&gt;[{&lt;/span&gt; role: &lt;span style="color:#e6db74"&gt;&amp;#34;readWrite&amp;#34;&lt;/span&gt;, db: &lt;span style="color:#e6db74"&gt;&amp;#34;pruebadb&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;}]&lt;/span&gt; &lt;span style="color:#f92672"&gt;})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Enable authentication in &lt;code&gt;mongod.conf&lt;/code&gt; and restart.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="5-client-installation-1"&gt;5. Client Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Add repository and install &lt;code&gt;mongodb-mongosh&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install -y mongodb-mongosh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Test remote connection.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ mongosh &lt;span style="color:#e6db74"&gt;&amp;#34;mongodb://usuario:contraseña@IP_DEL_SERVIDOR:27017/pruebadb?authSource=pruebadb&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="6-create-collections-and-data"&gt;6. Create Collections and Data
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Insert data into &amp;lsquo;clientes&amp;rsquo;, &amp;lsquo;habitaciones&amp;rsquo;, &amp;lsquo;servicios&amp;rsquo; collections.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="neo4j-server-installation-on-debian-13"&gt;Neo4j Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-dependencies"&gt;1. Dependencies
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install basic utilities.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install -y wget curl gnupg lsb-release ca-certificates apt-transport-https
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Install Java 21 (Temurin).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget -qO https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/adoptium.gpg &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/etc/apt/trusted.gpg.d/adoptium.gpg] https://packages.adoptium.net/artifactory/deb &lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;lsb_release -cs&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;&lt;span style="color:#e6db74"&gt; main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/adoptium.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install -y temurin-21-jdk
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add Neo4j key and repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget -qO https://debian.neo4j.com/neotechnology.gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/neo4j.gpg &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ echo &lt;span style="color:#e6db74"&gt;&amp;#39;deb https://debian.neo4j.com stable latest&amp;#39;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/neo4j.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation-3"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install Neo4j.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install neo4j -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Set initial password.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo neo4j-admin dbms set-initialpassword &lt;span style="color:#e6db74"&gt;&amp;#39;root1234&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Start service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl start neo4j
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-remote-configuration"&gt;3. Remote Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Configure &lt;code&gt;neo4j.conf&lt;/code&gt; to listen on all interfaces.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/neo4j/neo4j.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Restart service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="4-client-installation-1"&gt;4. Client Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install &lt;code&gt;cypher-shell&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install -y cypher-shell
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Connect.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ cypher-shell bolt://IP_SERVIDOR:7687 -u neo4j -p &lt;span style="color:#e6db74"&gt;&amp;#39;root1234&amp;#39;&lt;/span&gt; -a
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-data-insertion"&gt;5. Data Insertion
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create nodes and relationships (Clients, Rooms, Services, Payments, Reservations).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="redis-server-installation-on-debian-13"&gt;Redis Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-dependencies-1"&gt;1. Dependencies
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Add Redis repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archivekeyring.gpg
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb &lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;lsb_release -cs&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;&lt;span style="color:#e6db74"&gt; main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/redis.list &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation-4"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install Redis.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install redis
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Enable and start service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="3-remote-configuration-1"&gt;3. Remote Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;redis.conf&lt;/code&gt; to bind to all interfaces and set a password.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="4-client-installation-2"&gt;4. Client Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install &lt;code&gt;redis-tools&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install redis-tools
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Connect.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ redis-cli -h bd -p &lt;span style="color:#ae81ff"&gt;6379&lt;/span&gt; -a clienteredis
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-data-insertion-1"&gt;5. Data Insertion
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Use &lt;code&gt;HSET&lt;/code&gt; to insert data for Clients, Rooms, Services, Payments.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="cassandra-server-installation-on-debian-13"&gt;Cassandra Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-dependencies-2"&gt;1. Dependencies
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install Java 11 (Temurin) and Python build tools.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install -y temurin-11-jdk python3-pip python3-dev
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-server-installation-5"&gt;2. Server Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Download Cassandra 4.1.5 tarball and extract to &lt;code&gt;/opt/cassandra&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Create cassandra user.&lt;/li&gt;
+&lt;li&gt;Create systemd service file &lt;code&gt;cassandra.service&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Enable and start Cassandra.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="3-client-configuration-cqlsh"&gt;3. Client Configuration (cqlsh)
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Install python driver and fix compatibility issues with Python 3.13 (patch &lt;code&gt;cluster.py&lt;/code&gt; to use eventlet).&lt;/li&gt;
+&lt;li&gt;Create &lt;code&gt;cqlsh&lt;/code&gt; wrapper script.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="4-remote-configuration"&gt;4. Remote Configuration
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Modify &lt;code&gt;cassandra.yaml&lt;/code&gt; to listen on the server IP instead of localhost.&lt;/li&gt;
+&lt;li&gt;Restart service.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="5-usage"&gt;5. Usage
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Create Keyspaces and Tables (Authors, Books, Loans).&lt;/li&gt;
+&lt;li&gt;Insert data using CQL.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="web-application-and-sql-injection"&gt;Web Application and SQL Injection
+&lt;/h2&gt;&lt;p&gt;Details on connecting web applications to these databases and testing SQL Injection vulnerabilities on PostgreSQL/MySQL are included. Modifications to make the app vulnerable and fix it are described (using parameterized queries).&lt;/p&gt;
+&lt;h2 id="memcached-server-installation-on-debian-13"&gt;Memcached Server Installation on Debian 13
+&lt;/h2&gt;&lt;h3 id="1-package-installation"&gt;1. Package Installation
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;First, we update the repositories.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We install the memcached server along with the client library and tools.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install memcached libmemcached-tools
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Check the service status.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;This occurs because in recent versions of Memcached, it does not support two &lt;code&gt;-l&lt;/code&gt; directives in the same file; this causes exactly the &lt;code&gt;status=71&lt;/code&gt; error. We edit the &lt;code&gt;/etc/memcached.conf&lt;/code&gt; file and comment out the second line referring to &lt;code&gt;-l&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /etc/memcached.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Restart and check the service status again.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo systemctl restart memcached &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo systemctl status memcached
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-memcached-in-a-web-server"&gt;2. Memcached in a Web Server
+&lt;/h3&gt;&lt;p&gt;First of all, we must know what Memcached is. Since it is not a database per se, we can understand it as a service that functions as a cache for the database when it connects to a web application. To test its functionality, I will implement it on a Web Server taking data from a MySQL database.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;As we are working in a scenario too small to notice a difference when information comes from memcached or from the database server itself, I have added a notice on the web server to recognize it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-html" data-lang="html"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;{% if cached %}
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;&lt;span style="color:#f92672"&gt;div&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;style&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;background:#ffc107;color:#212529;padding:6px 10px;border-radius:6px;font-weight:600;&amp;#34;&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; Served from cache
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;/&lt;span style="color:#f92672"&gt;div&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;{% endif %}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-implementation-in-flask"&gt;3. Implementation in Flask
+&lt;/h3&gt;&lt;p&gt;Starting from the project, I will review the steps followed to implement memcached in a web server, although this process may differ depending on whether it is done with Flask or any other application.&lt;/p&gt;
+&lt;p&gt;First, we will start by adding &lt;code&gt;pymemcache==4.0.8&lt;/code&gt; to our virtual environment in &lt;code&gt;requirements.txt&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The rest of the changes will be made on the &lt;code&gt;app.py&lt;/code&gt; file:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Import library.&lt;/li&gt;
+&lt;li&gt;Initiate the memcached client.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="installation-basic-use-and-explanation-of-couchdb-on-debian-13"&gt;Installation, basic use and explanation of CouchDB on Debian 13
+&lt;/h2&gt;&lt;p&gt;Apache CouchDB is a document-oriented NoSQL database that stores JSON documents, exposes an HTTP/REST API and MapReduce views, and an efficient replication system. It is written in Erlang and uses append-only storage on B-trees, facilitating fault tolerance and concurrent reads. Fauxton is its integrated web interface for administration and testing.&lt;/p&gt;
+&lt;h3 id="1-dependencies-and-couchdb-server-installation"&gt;1. Dependencies and CouchDB Server Installation.
+&lt;/h3&gt;&lt;p&gt;The official CouchDB repository does not yet have specific packages for Debian 13, as it is a very recent version. Therefore, we will temporarily use Debian 12 packages for CouchDB installation until CouchDB publishes specific packages for Debian 13.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We update system packages, ensuring APT packages and metadata are up to date to avoid conflicts.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt upgrade -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We install necessary dependencies for CouchDB installation, to add HTTPS repositories and manage GPG keys.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install -y curl gnupg ca-certificates lsb-release apt-transport-https
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;curl&lt;/strong&gt;: to download the GPG key.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;gnupg&lt;/strong&gt;: to convert the GPG key to apt format (dearmor).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;lsb-release&lt;/strong&gt;: to obtain &amp;ldquo;VERSION_CODENAME&amp;rdquo;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We add the official CouchDB repository, where official CouchDB packages are found. We also add its GPG key so apt trusts the repo. In this step, we download the key and save it in apt format (.gpg).&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -fsSL https://couchdb.apache.org/repo/keys.asc | gpg --dearmor | sudo tee /usr/share/keyrings/couchdb-archive-keyring.gpg &amp;gt;/dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We add the entry to the sources list.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/usr/share/keyrings/couchdb-archive-keyring.gpg] https://apache.jfrog.io/artifactory/couchdb-deb/ bookworm main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/couchdb.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Update APT indices so the system recognizes the GPG key.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Launch CouchDB installation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install couchdb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;As we see, two typical errors appeared because it is trying to install CouchDB on Debian 12 using dependencies that may be obsolete in Debian 13. To install CouchDB, we will have to download and install the &amp;ldquo;libicu72&amp;rdquo; and &amp;ldquo;libmozjs-78-0&amp;rdquo; dependencies beforehand, which are the ones failing during installation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget http://ftp.debian.org/debian/pool/main/i/icu/libicu72_72.1-3+deb12u1_amd64.deb
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget http://ftp.debian.org/debian/pool/main/m/mozjs78/libmozjs-78-0_78.15.0-7_amd64.deb
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install ./libicu72_72.1-3+deb12u1_amd64.deb ./libmozjs-78-0_78.15.0-7_amd64.deb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;./&lt;/code&gt; before the filename tells apt to install from a local file, not from repositories. This will also resolve dependencies automatically if anything else is missing.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Update system again and execute command to install &amp;ldquo;CouchDB&amp;rdquo;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo apt install couchdb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Select &amp;ldquo;Accept&amp;rdquo;.&lt;/li&gt;
+&lt;li&gt;Select &amp;ldquo;Standalone&amp;rdquo; option, as CouchDB will run on this machine only. It&amp;rsquo;s the usual option for tests and local environments.&lt;/li&gt;
+&lt;li&gt;Set a CouchDB Erlang magic cookie value.&lt;/li&gt;
+&lt;li&gt;In the next page, as I want the server to listen to remote connections, I will configure the interface to &amp;ldquo;0.0.0.0&amp;rdquo;.&lt;/li&gt;
+&lt;li&gt;Add a password for the admin user, in my case &amp;ldquo;admin&amp;rdquo;.&lt;/li&gt;
+&lt;li&gt;Repeat password.&lt;/li&gt;
+&lt;li&gt;Verify access to CouchDB.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl http://localhost:5984/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-configuration-for-remote-connection"&gt;2. Configuration for Remote Connection.
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Edit the &lt;code&gt;[httpd]&lt;/code&gt; section in &lt;code&gt;/etc/couchdb/local.ini&lt;/code&gt;, indicating with value &amp;ldquo;0.0.0.0&amp;rdquo; that CouchDB will listen on all network interfaces, not just localhost. We will also add a password for when we connect to admin user remotely.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ sudo nano /opt/couchdb/etc/local.ini
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ grep -Ev &lt;span style="color:#e6db74"&gt;&amp;#34;^;|^&lt;/span&gt;$&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; /opt/couchdb/etc/local.ini
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Verify CouchDB listens on all interfaces.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ ss -tuln | grep &lt;span style="color:#ae81ff"&gt;5984&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-couchdb-client-installation"&gt;3. CouchDB Client Installation.
+&lt;/h3&gt;&lt;p&gt;Unlike other database systems, CouchDB does not require installing an independent client. This is because CouchDB is designed as an HTTP/REST server, meaning all management and data manipulation operations are done via HTTP requests in JSON format.
+We have the following client options available:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;CouchDB includes a web client called &lt;strong&gt;Fauxton&lt;/strong&gt; running directly in the browser.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Requires the admin user configured during installation.&lt;/li&gt;
+&lt;li&gt;No additional installation needed, cross-platform, accessible from any modern browser.&lt;/li&gt;
+&lt;li&gt;Allows: Creating/deleting databases, managing documents, users, permissions, views, and replication.&lt;/li&gt;
+&lt;li&gt;Access example: &lt;code&gt;http://SERVER_IP:5984/_utils/&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;CouchDB can be fully controlled using &lt;strong&gt;curl&lt;/strong&gt;.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Works on any OS, no extra installation, allows automation via scripts.&lt;/li&gt;
+&lt;li&gt;Remote access example:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword http://SERVER_IP:5984/_all_dbs
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="4-basic-use-of-couchdb"&gt;4. Basic Use of CouchDB.
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;After installing and configuring remote connection, verify server is active.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword http://SERVER_IP:5984/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create and list databases.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X PUT -u admin:myPassword http://SERVER_IP:5984/test1
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword http://SERVER_IP:5984/_all_dbs
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create a document with automatic ID.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X POST -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;type&amp;#34;:&amp;#34;person&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Ana&amp;#34;,&amp;#34;age&amp;#34;:29}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP:5984/test1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create a document with known ID.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X PUT -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;type&amp;#34;:&amp;#34;person&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Juan&amp;#34;,&amp;#34;age&amp;#34;:35}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP:5984/test1/juan
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Read created documents.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword http://SERVER_IP:5984/test1/_all_docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword http://SERVER_IP:5984/test1/juan
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Delete a document (requires knowing the revision &lt;code&gt;_rev&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X DELETE &lt;span style="color:#e6db74"&gt;&amp;#34;http://SERVER_IP:5984/test1/juan?rev=175f7db8e2f472106529dba1e056feb54&amp;#34;&lt;/span&gt; -u admin:myPassword
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create an index on fields &amp;ldquo;type&amp;rdquo; and &amp;ldquo;age&amp;rdquo; using Mango queries.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X POST -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;index&amp;#34;:{&amp;#34;fields&amp;#34;: [&amp;#34;type&amp;#34;,&amp;#34;age&amp;#34;]},&amp;#34;name&amp;#34;:&amp;#34;idx_type_age&amp;#34;,&amp;#34;type&amp;#34;:&amp;#34;json&amp;#34;}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP/test1/_index
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Execute a Mango query. Returns JSON with documents where type is &amp;ldquo;person&amp;rdquo; and age &amp;gt; 25.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X POST -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;selector&amp;#34;:{&amp;#34;type&amp;#34;:&amp;#34;person&amp;#34;,&amp;#34;age&amp;#34;: {&amp;#34;$gt&amp;#34;:25}},&amp;#34;fields&amp;#34;:[&amp;#34;_id&amp;#34;,&amp;#34;name&amp;#34;,&amp;#34;age&amp;#34;]}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP:5984/test1/_find
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create views with MapReduce.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X PUT -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;views&amp;#34;:{&amp;#34;by_type&amp;#34;: {&amp;#34;map&amp;#34;:&amp;#34;function(doc) {if(doc.type)emit(doc.type,null);}&amp;#34;}},&amp;#34;language&amp;#34;:&amp;#34;javascript&amp;#34;} &amp;#39;&lt;/span&gt; -u admin:admin http://SERVER_IP:5984/test1/_design/people
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;List or execute the view.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u admin:myPassword &lt;span style="color:#e6db74"&gt;&amp;#34;http://SERVER_IP:5984/test1/_design/people/_view/by_type&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Local database replication.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X POST -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;source&amp;#34;:&amp;#34;test1&amp;#34;,&amp;#34;target&amp;#34;:&amp;#34;test1_backup&amp;#34;,&amp;#34;create_target&amp;#34;:true}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP:5984/_replicate
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create a user in CouchDB.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X POST -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;_id&amp;#34;:&amp;#34;org.couchdb.user:sergio&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;sergio&amp;#34;,&amp;#34;roles&amp;#34;: [&amp;#34;admin&amp;#34;],&amp;#34;type&amp;#34;:&amp;#34;user&amp;#34;,&amp;#34;password&amp;#34;:&amp;#34;sergio&amp;#34;}&amp;#39;&lt;/span&gt; -u admin:admin http://SERVER_IP:5984/_users
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Assign permissions to user on database.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -X PUT -H &lt;span style="color:#e6db74"&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#39;{&amp;#34;admins&amp;#34;:{&amp;#34;names&amp;#34;: [],&amp;#34;roles&amp;#34;: []},&amp;#34;members&amp;#34;:{&amp;#34;names&amp;#34;:[&amp;#34;sergio&amp;#34;],&amp;#34;roles&amp;#34;:[&amp;#34;admin&amp;#34;]}}&amp;#39;&lt;/span&gt; -u admin:myPassword http://SERVER_IP:5984/test1/_security
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Verify access with new user.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ curl -u sergio:sergio http://SERVER_IP:5984/test1/_all_docs
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-couchdb-internal-functioning"&gt;5. CouchDB Internal Functioning.
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Architecture&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Written in Erlang/OTP, using beam.smp VM.&lt;/li&gt;
+&lt;li&gt;All communication is HTTP/REST, using JSON.&lt;/li&gt;
+&lt;li&gt;Each document has unique &lt;code&gt;_id&lt;/code&gt; and &lt;code&gt;_rev&lt;/code&gt; (revision).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Storage&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Uses append-only B-trees (copy-on-write).&lt;/li&gt;
+&lt;li&gt;Modifications create new nodes in the B-tree, guaranteeing consistent reads without locks.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;MVCC (Multi-Version Concurrency Control)&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Allows concurrent reads without locks.&lt;/li&gt;
+&lt;li&gt;Conflicts are detected on write and must be resolved by the application.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Replication&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Push/pull model: compares sequences (&lt;code&gt;_changes&lt;/code&gt;) and replicates only differences.&lt;/li&gt;
+&lt;li&gt;Supports continuous replication, ideal for distributed or offline-first bases.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Compaction and Maintenance&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Due to append-only model, files grow continuously.&lt;/li&gt;
+&lt;li&gt;Periodic compaction of DB and views is used to free space.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="installation-of-sql-developer-as-remote-oracle-client-using-tns-connection"&gt;Installation of SQL Developer as remote ORACLE client using TNS connection.
+&lt;/h2&gt;&lt;h3 id="1-java-17-installation"&gt;1. Java 17 Installation
+&lt;/h3&gt;&lt;p&gt;SQL Developer requires Java 17. Since Debian Trixie does not have it in its official repositories, we will install it from Adoptium:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Install necessary dependencies.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install -y wget apt-transport-https gpg
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add GPG key for Adoptium.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo gpg --dearmor -o /usr/share/keyrings/adoptium.gpg
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add the repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/adoptium.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Update and install Java 17.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install -y temurin-17-jdk
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Verify installation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;java -version
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-download-sql-developer-from-oracle"&gt;2. Download SQL Developer from Oracle
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Download via the official SQL Developer link.&lt;/li&gt;
+&lt;li&gt;Once downloaded, unzip the .zip file.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ unzip sqldeveloper-24.3.1.347.1826-no-jre.zip
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;We will have a folder with extracted files. Grant execution permissions to the &lt;code&gt;.sh&lt;/code&gt; file in that directory.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ chmod +x sqldeveloper/sqldeveloper.sh
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ ./sqldeveloper.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Create &lt;code&gt;tnsnames.ora&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ nano .oracle/tnsnames.ora
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Content (adjust HOST IP and SERVICE_NAME as needed):&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;ORCLCDB&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (DESCRIPTION =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.122.79)(PORT = 1521))
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (CONNECT_DATA =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SERVER = DEDICATED)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SERVICE_NAME = ORCLCDB)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Add Oracle environment variables to &lt;code&gt;.bashrc&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ nano ~/.bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export ORACLE_HOME&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$HOME/oracle/instantclient_21_19
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export TNS_ADMIN&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$HOME/.oracle
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export PATH&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$ORACLE_HOME:$PATH
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export LD_LIBRARY_PATH&lt;span style="color:#f92672"&gt;=&lt;/span&gt;$ORACLE_HOME:$LD_LIBRARY_PATH
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;alias sqlplus&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#39;rlwrap sqlplus&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Apply changes.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo $TNS_ADMIN
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;Verify output shows path to &lt;code&gt;.oracle&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Check &lt;code&gt;tnsnames.ora&lt;/code&gt; is accessible.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;serjaii@db:~$ cat $TNS_ADMIN/tnsnames.ora
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description></item></channel></rss>

@@ -1,218 +1,489 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-    <channel>
-        <title>Redes on SerjAii</title>
-        <link>https://serjaii.github.io/Serjaii/tags/redes/</link>
-        <description>Recent content in Redes on SerjAii</description>
-        <generator>Hugo -- gohugo.io</generator>
-        <language>es-es</language>
-        <lastBuildDate>Sat, 11 Oct 2025 23:06:17 +0200</lastBuildDate><atom:link href="https://serjaii.github.io/Serjaii/tags/redes/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Hunger Games</title>
-        <link>https://serjaii.github.io/Serjaii/post/hunger-games/</link>
-        <pubDate>Sat, 11 Oct 2025 23:06:17 +0200</pubDate>
-        
-        <guid>https://serjaii.github.io/Serjaii/post/hunger-games/</guid>
-        <description>&lt;img src="https://serjaii.github.io/Serjaii/post/hunger-games/cover.jpg" alt="Featured image of post Hunger Games" /&gt;&lt;h1 id=&#34;hunger-games&#34;&gt;Hunger Games
-&lt;/h1&gt;&lt;h2 id=&#34;introducción&#34;&gt;Introducción
-&lt;/h2&gt;&lt;p&gt;Esta práctica simula un escenario de red complejo basado en la temática de &lt;em&gt;The Hunger Games&lt;/em&gt;. A través de cinco ejercicios progresivos, implementaremos configuraciones de red avanzadas que incluyen enrutamiento estático, listas de control de acceso (ACL), servidor DHCP y un servidor web con restricciones de acceso.&lt;/p&gt;
-&lt;p&gt;Los objetivos principales son:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Configurar el enrutamiento entre múltiples distritos (redes)&lt;/li&gt;
-&lt;li&gt;Implementar políticas de seguridad mediante ACL estándar y extendidas&lt;/li&gt;
-&lt;li&gt;Automatizar la asignación de direcciones IP con DHCP&lt;/li&gt;
-&lt;li&gt;Gestionar accesos a servicios web mediante filtrado por puerto&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Esta práctica permite aplicar conceptos fundamentales de redes en un contexto dinámico donde las alianzas (y por tanto, las políticas de acceso) cambian constantemente.&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2 id=&#34;contexto-del-escenario&#34;&gt;Contexto del escenario
-&lt;/h2&gt;&lt;p&gt;Vas a participar en &lt;em&gt;The Hunger Games&lt;/em&gt;, un juego de alianzas donde el objetivo es sobrevivir.&lt;br&gt;
-El mundo se divide en distritos, numerados del 1 al 12 del más rico al más pobre.&lt;br&gt;
-También se rumorea la existencia de un distrito 13, pero nadie está muy seguro de su existencia.&lt;br&gt;
-En este momento solo quedan representantes de cuatro distritos.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Redes on SerjAii</title><link>http://sergiojimenez.org/tags/redes/</link><description>Recent content in Redes on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>es</language><lastBuildDate>Sat, 11 Oct 2025 23:06:17 +0200</lastBuildDate><atom:link href="http://sergiojimenez.org/tags/redes/index.xml" rel="self" type="application/rss+xml"/><item><title>Hunger Games</title><link>http://sergiojimenez.org/post/hunger-games/</link><pubDate>Sat, 11 Oct 2025 23:06:17 +0200</pubDate><guid>http://sergiojimenez.org/post/hunger-games/</guid><description>&lt;img src="http://sergiojimenez.org/post/hunger-games/cover.jpg" alt="Featured image of post Hunger Games" /&gt;&lt;h1 id="hunger-games"&gt;Hunger Games
+&lt;/h1&gt;&lt;p&gt;Vas a participar en The Hunger Games, un juego de alianzas donde el objetivo es sobrevivir. El mundo se divide en distritos, numerados del 1 al 12 del más rico al más pobre. También se rumorea la existencia de un distrito 13, pero nadie está muy seguro de su existencia. En este momento solo quedan representantes de cuatro distritos.&lt;/p&gt;
 &lt;p&gt;El escenario del juego incluye todos los distritos anteriores y el distrito secreto, al que al principio nadie sabe llegar.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image44.png"
+width="1407"
+height="692"
+srcset="http://sergiojimenez.org/post/hunger-games/image44_hu_fb0ffadff2c0560b.png 480w, http://sergiojimenez.org/post/hunger-games/image44_hu_f9cfdd84772bc48e.png 1024w"
+loading="lazy"
+alt="Topología de red"
+class="gallery-image"
+data-flex-grow="203"
+data-flex-basis="487px"
+&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id=&#34;ejercicio-1-configuración-de-red&#34;&gt;Ejercicio 1: Configuración de red
-&lt;/h2&gt;&lt;p&gt;Realizar la configuración de la red que sea necesaria para que todos los participantes puedan comunicarse entre sí por la ruta más corta posible.&lt;br&gt;
-Documenta el proceso y demuestra su funcionamiento.&lt;/p&gt;
-&lt;p&gt;Para permitir la comunicación de todos los participantes en primer lugar asignaremos direcciones IP tanto a estos como a las interfaces de los routers en el camino.&lt;/p&gt;
-&lt;h3 id=&#34;direcciones-ip&#34;&gt;Direcciones IP
-&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Participantes:&lt;/strong&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Marvel: 10.0.1.2 /24&lt;/li&gt;
-&lt;li&gt;Glimmer: 10.0.1.3 /24&lt;/li&gt;
-&lt;li&gt;Cato: 10.0.2.2 /24&lt;/li&gt;
-&lt;li&gt;Clover: 10.0.2.3 /24&lt;/li&gt;
-&lt;li&gt;Thresh: 10.0.11.2 /24&lt;/li&gt;
-&lt;li&gt;Rue: 10.0.11.3 /24&lt;/li&gt;
-&lt;li&gt;Peeta: 10.0.12.2 /24&lt;/li&gt;
-&lt;li&gt;Katniss: 10.0.12.3 /24&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;Routers:&lt;/strong&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;R1 f0/0: 10.0.1.1 /24
+&lt;h2 id="ejercicio-1-configuración-de-red"&gt;Ejercicio 1: Configuración de red
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Realizar la configuración de la red que sea necesaria para que todos los participantes puedan comunicarse entre sí por la ruta más corta posible. Documenta el proceso y demuestra su funcionamiento.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Para permitir la comunicación de todos los participantes en primer lugar le asignaremos direcciones IP tanto a estos como a las interfaces de los routers en el camino.&lt;/p&gt;
+&lt;h3 id="direcciones-ip-de-los-participantes"&gt;Direcciones IP de los Participantes
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Marvel: 10.0.1.2 /24
+Glimmer: 10.0.1.3 /24
+Cato: 10.0.2.2 /24
+Clover: 10.0.2.3 /24
+Thresh: 10.0.11.2 /24
+Rue: 10.0.11.3 /24
+Peeta: 10.0.12.2 /24
+Katniss: 10.0.12.3 /24
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="direcciones-ip-de-los-routers"&gt;Direcciones IP de los Routers
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;R1 f0/0: 10.0.1.1 /24
 R1 f0/1: 172.23.0.1 /24
 R1 f1/0: 192.168.1.2 /24
-
 R2 f0/0: 10.0.11.1 /24
 R2 f0/1: 172.23.0.2 /24
 R2 f1/0: 172.24.0.1 /24
 R2 f1/1: 192.168.11.2 /24
-
 R3 f0/0: 10.0.2.1 /24
 R3 f0/1: 172.25.0.1 /24
 R3 f1/0: 192.168.2.2 /24
-
 R4 f0/0: 10.0.12.1 /24
 R4 f0/1: 172.24.0.2 /24
 R4 f1/0: 192.168.12.2 /24
 R4 f1/1: 172.25.0.2 /24
-
 R5 f0/0: 192.168.11.1 /24
 R5 f0/1: 192.168.12.1 /24
 R5 f1/0: 192.168.1.1 /24
 R5 f1/1: 192.168.2.1 /24
 R5 f2/0: 10.0.13.1 /24
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;direccionamiento-de-routers&#34;&gt;Direccionamiento de routers
-&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;R1:&lt;/strong&gt;&lt;br&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Una vez asignadas las IP pasaremos con el direccionamiento de los routers.&lt;/p&gt;
+&lt;h3 id="configuración-de-enrutamiento"&gt;Configuración de Enrutamiento
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;R1:&lt;/strong&gt;
 Si el distrito 1 quiere comunicar con el distrito 11 el tráfico irá a R2, en el resto de casos saldrá por la salida por defecto hacia R5.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;R2:&lt;/strong&gt;&lt;br&gt;
-Ignoramos el distrito 13, la comunicación para el distrito 1 saldrá hacia R1 y la salida por defecto será hacia R4.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;R3:&lt;/strong&gt;&lt;br&gt;
-Salida por defecto hacia R5, excepto mensajes para el distrito 12 que saldrán hasta R4.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;R4:&lt;/strong&gt;&lt;br&gt;
-Mensajes al distrito 2 viajarán a R3, el resto hasta R2.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;R5:&lt;/strong&gt;&lt;br&gt;
-Deberemos especificar rutas hacia cada distrito, salida por defecto hacia el distrito 13.&lt;/p&gt;
-&lt;h3 id=&#34;comprobación-de-conectividad&#34;&gt;Comprobación de conectividad
-&lt;/h3&gt;&lt;ul&gt;
-&lt;li&gt;Ping entre distritos:
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;Distrito 1 → Distrito 2&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Distrito 1 → Distrito 11&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Distrito 1 → Distrito 12&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image23.png"
+width="482"
+height="238"
+srcset="http://sergiojimenez.org/post/hunger-games/image23_hu_2f72b72314f0e547.png 480w, http://sergiojimenez.org/post/hunger-games/image23_hu_f4f7b99dcd3ae04f.png 1024w"
+loading="lazy"
+alt="Configuración R1"
+class="gallery-image"
+data-flex-grow="202"
+data-flex-basis="486px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;R2:&lt;/strong&gt;
+Como el Distrito 13 es aún desconocido por los participantes ignoraremos su presencia a la hora de hacer el enrutamiento, esto nos ahorrará momentáneamente una línea a la tabla. La comunicación para el distrito 1 saldrá hacia R1 y la salida por defecto será hacia R4.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image41.png"
+width="483"
+height="262"
+srcset="http://sergiojimenez.org/post/hunger-games/image41_hu_da6d0cfe536f0d18.png 480w, http://sergiojimenez.org/post/hunger-games/image41_hu_2f77bb4b85045b92.png 1024w"
+loading="lazy"
+alt="Configuración R2"
+class="gallery-image"
+data-flex-grow="184"
+data-flex-basis="442px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;R3:&lt;/strong&gt;
+Similar a R1, salida por defecto camino a R5, excepto mensajes para el distrito 12 que saldrán hasta R4.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image11.png"
+width="474"
+height="241"
+srcset="http://sergiojimenez.org/post/hunger-games/image11_hu_92de81a7e3f1943a.png 480w, http://sergiojimenez.org/post/hunger-games/image11_hu_5b01d3fb06bf3d6c.png 1024w"
+loading="lazy"
+alt="Configuración R3"
+class="gallery-image"
+data-flex-grow="196"
+data-flex-basis="472px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;R4:&lt;/strong&gt;
+Similar a R2, los mensajes a distrito 2 viajarán a R3, el resto hasta R2.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image9.png"
+width="478"
+height="265"
+srcset="http://sergiojimenez.org/post/hunger-games/image9_hu_c19fca94350ae658.png 480w, http://sergiojimenez.org/post/hunger-games/image9_hu_3a937de0de4a194e.png 1024w"
+loading="lazy"
+alt="Configuración R4"
+class="gallery-image"
+data-flex-grow="180"
+data-flex-basis="432px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;R5:&lt;/strong&gt;
+En este caso sí deberemos especificar las rutas hacia cada distrito, la salida por defecto la dejaré mirando hacia el distrito 13 pensando a futuro, pues en cualquier caso no nos va a ahorrar líneas a la tabla de enrutamiento.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image16.png"
+width="480"
+height="302"
+srcset="http://sergiojimenez.org/post/hunger-games/image16_hu_71c0d20da5f3e164.png 480w, http://sergiojimenez.org/post/hunger-games/image16_hu_efb49ea1255591e5.png 1024w"
+loading="lazy"
+alt="Configuración R5"
+class="gallery-image"
+data-flex-grow="158"
+data-flex-basis="381px"
+&gt;&lt;/p&gt;
+&lt;h3 id="comprobación-de-ping-entre-distritos"&gt;Comprobación de ping entre distritos
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Distrito 1:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image6.png"
+width="403"
+height="347"
+srcset="http://sergiojimenez.org/post/hunger-games/image6_hu_a055eb2cbe9bb026.png 480w, http://sergiojimenez.org/post/hunger-games/image6_hu_c7ceffeafa8d3f04.png 1024w"
+loading="lazy"
+alt="Ping desde Distrito 1"
+class="gallery-image"
+data-flex-grow="116"
+data-flex-basis="278px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Distrito 2:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image34.png"
+width="403"
+height="347"
+srcset="http://sergiojimenez.org/post/hunger-games/image34_hu_3f845991719e2411.png 480w, http://sergiojimenez.org/post/hunger-games/image34_hu_512e28517ca9de3c.png 1024w"
+loading="lazy"
+alt="Ping desde Distrito 2"
+class="gallery-image"
+data-flex-grow="116"
+data-flex-basis="278px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Distrito 11:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image8.png"
+width="403"
+height="347"
+srcset="http://sergiojimenez.org/post/hunger-games/image8_hu_f4da333952b4dbc5.png 480w, http://sergiojimenez.org/post/hunger-games/image8_hu_9eb1967da7af7aaf.png 1024w"
+loading="lazy"
+alt="Ping desde Distrito 11"
+class="gallery-image"
+data-flex-grow="116"
+data-flex-basis="278px"
+&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id=&#34;ejercicio-2-acl-según-alianzas&#34;&gt;Ejercicio 2: ACL según alianzas
-&lt;/h2&gt;&lt;p&gt;A medida que avanza el juego se van modificando las alianzas.&lt;br&gt;
-El segundo día la situación es la siguiente:&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Los superpijos se han peleado con todos y no se comunican con el resto de distritos.&lt;/p&gt;
+&lt;h2 id="ejercicio-2-acl-según-alianzas"&gt;Ejercicio 2: ACL según alianzas
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Establecer las ACL necesarias para reflejar la situación descrita. Documenta el proceso y demuestra su funcionamiento.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;A medida que avanza el juego se van modificando las alianzas y, por tanto, algunos participantes pasan a ser enemigos y dejan de tener comunicación entre ellos. Así, el segundo día la situación es la siguiente:&lt;/p&gt;
+&lt;h3 id="los-superpijos-se-han-peleado-con-todos"&gt;Los superpijos se han peleado con todos
+&lt;/h3&gt;&lt;blockquote&gt;
+&lt;p&gt;Los superpijos se han peleado con todos y no se comunican con el resto de distritos, cuyos mensajes no quieren escuchar.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;h3 id=&#34;opción-1&#34;&gt;Opción 1
-&lt;/h3&gt;&lt;p&gt;En el router de cada distrito bloquear tráfico destino &lt;code&gt;10.0.1.0&lt;/code&gt;.&lt;/p&gt;
-&lt;h3 id=&#34;opción-2&#34;&gt;Opción 2
-&lt;/h3&gt;&lt;p&gt;Cortar todo el tráfico de R1 (más eficiente).&lt;br&gt;
-Se crea una &lt;strong&gt;ACL estándar&lt;/strong&gt; en R1 que deniega todo el tráfico saliente desde la interfaz del switch.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Resultados:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Para esta situación tenemos 2 opciones usando ACL:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;Ping desde fuera → &amp;ldquo;administratively prohibited&amp;rdquo;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Ping desde dentro → timeout (por denegación al retorno)&lt;/p&gt;
-&lt;/li&gt;
+&lt;li&gt;En el router de cada distrito bloquear el tráfico con destino 10.0.1.0, requiere crear una ACL en R2, R3 y R4.&lt;/li&gt;
+&lt;li&gt;Cortar todo el tráfico de R1, en mi opinión la más eficiente y la que voy a usar, el inconveniente es que los mensajes provenientes de los demás distritos recorren un mayor camino antes de ser desechados por R1.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;hr&gt;
-&lt;blockquote&gt;
+&lt;p&gt;Con esto he creado una ACL estándar en el router del distrito 1, todo el tráfico que intente salir desde la interfaz del switch será denegado.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image3.png"
+width="250"
+height="96"
+srcset="http://sergiojimenez.org/post/hunger-games/image3_hu_fc725038d19b8a84.png 480w, http://sergiojimenez.org/post/hunger-games/image3_hu_c576dbedc31f0755.png 1024w"
+loading="lazy"
+alt="ACL Distrito 1"
+class="gallery-image"
+data-flex-grow="260"
+data-flex-basis="625px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ping desde fuera hacia Distrito 1:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image38.png"
+width="484"
+height="164"
+srcset="http://sergiojimenez.org/post/hunger-games/image38_hu_73d6a915b0ebfd51.png 480w, http://sergiojimenez.org/post/hunger-games/image38_hu_c06cc42fe42a554c.png 1024w"
+loading="lazy"
+alt="Ping desde fuera"
+class="gallery-image"
+data-flex-grow="295"
+data-flex-basis="708px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ping desde Distrito 1 hacia fuera:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image2.png"
+width="190"
+height="55"
+srcset="http://sergiojimenez.org/post/hunger-games/image2_hu_6c56f0244c228e05.png 480w, http://sergiojimenez.org/post/hunger-games/image2_hu_134b6478684a11a9.png 1024w"
+loading="lazy"
+alt="Ping desde dentro"
+class="gallery-image"
+data-flex-grow="345"
+data-flex-basis="829px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Como podemos ver el mensaje de error es distinto, si hacemos el ping desde un PC fuera del distrito 1 nos encontraremos de cara con la ACL que nos denegará el paso y nos devolverá el mensaje de &amp;lsquo;administratively prohibited&amp;rsquo;. Sin embargo si probamos un ping desde dentro del distrito 1 el mensaje será timeout debido a que la comunicación sí está alcanzando el destino, pero a su vuelta esta se encuentra de nuevo con la ACL que ahora sí, le deniega el paso.&lt;/p&gt;
+&lt;h3 id="los-indigentes-y-los-demás-distritos"&gt;Los indigentes y los demás distritos
+&lt;/h3&gt;&lt;blockquote&gt;
 &lt;p&gt;Los indigentes se comunican con los pobres, pero los demás distritos no quieren saber nada de ellos.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;Se crea una &lt;strong&gt;ACL extendida&lt;/strong&gt; en R4 para denegar tráfico hacia los distritos 1 y 2.&lt;/p&gt;
-&lt;p&gt;Comprobamos ping desde el distrito 12.&lt;/p&gt;
-&lt;hr&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Los pobres y los pijos se alían y pueden comunicarse solo a través de R5.&lt;/p&gt;
+&lt;p&gt;Crearemos una ACL extendida en la interfaz del switch de R4, para denegar todo el tráfico que se intente enviar a los distritos 1 y 2.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image17.png"
+width="184"
+height="104"
+srcset="http://sergiojimenez.org/post/hunger-games/image17_hu_e64a8cae67d2b86.png 480w, http://sergiojimenez.org/post/hunger-games/image17_hu_80cd7270f3649204.png 1024w"
+loading="lazy"
+alt="ACL R4"
+class="gallery-image"
+data-flex-grow="176"
+data-flex-basis="424px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Comprobamos ping a cada distrito desde el 12:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image12.png"
+width="384"
+height="126"
+srcset="http://sergiojimenez.org/post/hunger-games/image12_hu_e82aa24bc4df5d9d.png 480w, http://sergiojimenez.org/post/hunger-games/image12_hu_5046472aa14ec3d1.png 1024w"
+loading="lazy"
+alt="Comprobación pings"
+class="gallery-image"
+data-flex-grow="304"
+data-flex-basis="731px"
+&gt;&lt;/p&gt;
+&lt;h3 id="alianza-entre-pobres-y-pijos"&gt;Alianza entre pobres y pijos
+&lt;/h3&gt;&lt;blockquote&gt;
+&lt;p&gt;Los pobres y los pijos han establecido una alianza un tanto sorprendente y pueden comunicarse aun entre ellos, aunque solo a través de R5.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;Se modifica el enrutamiento de R2 y R4 para enviar tráfico por defecto a R5.&lt;br&gt;
-No se necesita ACL nueva.&lt;/p&gt;
+&lt;p&gt;Ahora sí deberemos modificar nuestras tablas de enrutamiento de R2 y R4. Enviaremos el tráfico por defecto a R5, tendremos que añadir la ruta entre R2 y R4 manualmente.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image40.png"
+width="473"
+height="280"
+srcset="http://sergiojimenez.org/post/hunger-games/image40_hu_e740e98b24cbf8bf.png 480w, http://sergiojimenez.org/post/hunger-games/image40_hu_5d4b63f24529b91d.png 1024w"
+loading="lazy"
+alt="Modificación enrutamiento R4"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="405px"
+&gt;&lt;/p&gt;
+&lt;p&gt;No será necesario configurar ACL en este punto ya que toda comunicación entre Distritos 2 y 11 pasará por R5.&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id=&#34;ejercicio-3-dhcp-para-los-superpijos&#34;&gt;Ejercicio 3: DHCP para los superpijos
-&lt;/h2&gt;&lt;p&gt;Se monta un &lt;strong&gt;servidor DHCP&lt;/strong&gt; en el router del distrito 1.&lt;br&gt;
-Las máquinas deben recibir IP automáticamente (cinco primeras del rango), reservando la primera para el router.&lt;/p&gt;
-&lt;h3 id=&#34;pasos&#34;&gt;Pasos:
-&lt;/h3&gt;&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;Excluir la IP del router.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Configurar parámetros del servidor DHCP.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Comprobar asignación automática de IPs.&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h2 id="ejercicio-3-servidor-dhcp"&gt;Ejercicio 3: Servidor DHCP
+&lt;/h2&gt;&lt;p&gt;Al día siguiente, los superpijos deciden que es supercansado poner las direcciones IP a mano, así que tienes que montarles un servidor DHCP en el router de su red para que sus máquinas reciban automáticamente una dirección IP de las cinco primeras de su rango de direcciones, reservando la primera para el propio router.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Configura el servidor DHCP de los superpijos. Documenta el proceso y demuestra su funcionamiento.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Excluimos la IP del router y las que no queremos que sean asignadas:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image4.png"
+width="349"
+height="34"
+srcset="http://sergiojimenez.org/post/hunger-games/image4_hu_40b39701becaf6dc.png 480w, http://sergiojimenez.org/post/hunger-games/image4_hu_3f86896969235089.png 1024w"
+loading="lazy"
+alt="Exclusión IPs"
+class="gallery-image"
+data-flex-grow="1026"
+data-flex-basis="2463px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Ahora configuramos los parámetros del servidor DHCP:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image14.png"
+width="292"
+height="85"
+srcset="http://sergiojimenez.org/post/hunger-games/image14_hu_24454e161252c754.png 480w, http://sergiojimenez.org/post/hunger-games/image14_hu_9aecb892bb42a138.png 1024w"
+loading="lazy"
+alt="Configuración DHCP"
+class="gallery-image"
+data-flex-grow="343"
+data-flex-basis="824px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Comprobamos su funcionamiento:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image30.png"
+width="315"
+height="241"
+srcset="http://sergiojimenez.org/post/hunger-games/image30_hu_7f6788aca0ac681.png 480w, http://sergiojimenez.org/post/hunger-games/image30_hu_d9923373d19f03a1.png 1024w"
+loading="lazy"
+alt="Comprobación DHCP 1"
+class="gallery-image"
+data-flex-grow="130"
+data-flex-basis="313px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image28.png"
+width="315"
+height="241"
+srcset="http://sergiojimenez.org/post/hunger-games/image28_hu_c6f49c8a4ab4e2d3.png 480w, http://sergiojimenez.org/post/hunger-games/image28_hu_d00a598a80662030.png 1024w"
+loading="lazy"
+alt="Comprobación DHCP 2"
+class="gallery-image"
+data-flex-grow="130"
+data-flex-basis="313px"
+&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id=&#34;ejercicio-4-acl-por-relaciones-personales&#34;&gt;Ejercicio 4: ACL por relaciones personales
-&lt;/h2&gt;&lt;blockquote&gt;
-&lt;p&gt;Peeta establece alianza con Clove.&lt;br&gt;
-Katniss deja de hablarse con Rue.&lt;br&gt;
-Katniss y Cato se comunican.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;Como el tráfico del distrito 12 estaba bloqueado, se reescribe la &lt;strong&gt;ACL extendida&lt;/strong&gt;:&lt;/p&gt;
+&lt;h2 id="ejercicio-4-acl-por-relaciones-personales"&gt;Ejercicio 4: ACL por relaciones personales
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Configura las ACL (extendidas o no) que sean necesarias para representar este nuevo escenario. Documenta el proceso y demuestra su funcionamiento.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Cuando pasa una semana, las alianzas y enemistades ya no son solo entre distritos sino entre participantes individuales.&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Katniss ↔ Peeta, Cato, Thresh&lt;/li&gt;
-&lt;li&gt;Peeta ↔ Katniss, Clove, Distrito 11&lt;/li&gt;
+&lt;li&gt;Peeta establece una alianza con Clove y debe poder comunicarse con él.&lt;/li&gt;
+&lt;li&gt;Katniss deja de hablarse con Rue.&lt;/li&gt;
+&lt;li&gt;Katniss y Cato están empezando una bonita relación y necesitan comunicarse entre ellos.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;Comprobaciones:&lt;/strong&gt;&lt;br&gt;
-Ping en ambos sentidos, con timeout cuando está denegado.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Cato y Thresh se pelean.&lt;/p&gt;
+&lt;p&gt;Como anteriormente se denegó todo el tráfico proveniente del Distrito 12 debemos reescribir dicha ACL, permitiendo las comunicaciones que se indican, será una ACL extendida.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image22.png"
+width="481"
+height="97"
+srcset="http://sergiojimenez.org/post/hunger-games/image22_hu_cb9ea7674c6dad36.png 480w, http://sergiojimenez.org/post/hunger-games/image22_hu_6e03036e99ca3ccc.png 1024w"
+loading="lazy"
+alt="ACL extendida R4"
+class="gallery-image"
+data-flex-grow="495"
+data-flex-basis="1190px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Con esto:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Katniss solo puede comunicarse con Peeta, Cato y Thresh.&lt;/li&gt;
+&lt;li&gt;Peeta podrá comunicarse con Katniss, Clove y el Distrito 11.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Comprobaciones:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image31.png"
+width="485"
+height="411"
+srcset="http://sergiojimenez.org/post/hunger-games/image31_hu_96518345cb7bb0c4.png 480w, http://sergiojimenez.org/post/hunger-games/image31_hu_de982b7e72b747c6.png 1024w"
+loading="lazy"
+alt="Comprobación Katniss"
+class="gallery-image"
+data-flex-grow="118"
+data-flex-basis="283px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image29.png"
+width="485"
+height="411"
+srcset="http://sergiojimenez.org/post/hunger-games/image29_hu_7ef7452b64db1def.png 480w, http://sergiojimenez.org/post/hunger-games/image29_hu_b5b7ee3a6ba2266e.png 1024w"
+loading="lazy"
+alt="Comprobación Peeta"
+class="gallery-image"
+data-flex-grow="118"
+data-flex-basis="283px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Si intentamos hacer un ping denegado en sentido contrario volveremos a encontrarnos con el mensaje de timeout anteriormente explicado.&lt;/p&gt;
+&lt;h3 id="cato-y-thresh-se-pelean"&gt;Cato y Thresh se pelean
+&lt;/h3&gt;&lt;blockquote&gt;
+&lt;p&gt;Cato y Thresh han acabado peleándose y ya no hay comunicación entre ellos.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;Se deniega comunicación con una ACL extendida (puede estar en R2, R3 o R5).&lt;/p&gt;
+&lt;p&gt;Denegamos la comunicación con una ACL extendida, podemos colocarla tanto en R2 como R3 y R5, en cualquiera de los casos al menos uno de los mensajes tendrán que recorrer más de un router antes de ser eliminado.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image43.png"
+width="428"
+height="100"
+srcset="http://sergiojimenez.org/post/hunger-games/image43_hu_be06aaa7567be9df.png 480w, http://sergiojimenez.org/post/hunger-games/image43_hu_762c6cbd4ae02b9e.png 1024w"
+loading="lazy"
+alt="ACL Cato-Thresh"
+class="gallery-image"
+data-flex-grow="428"
+data-flex-basis="1027px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image7.png"
+width="476"
+height="85"
+srcset="http://sergiojimenez.org/post/hunger-games/image7_hu_ae1d944769fa8942.png 480w, http://sergiojimenez.org/post/hunger-games/image7_hu_f86379931e9a3889.png 1024w"
+loading="lazy"
+alt="Comprobación Cato-Thresh"
+class="gallery-image"
+data-flex-grow="560"
+data-flex-basis="1344px"
+&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id=&#34;ejercicio-5-servidor-web-del-distrito-13&#34;&gt;Ejercicio 5: Servidor web del distrito 13
-&lt;/h2&gt;&lt;p&gt;Se monta un &lt;strong&gt;servidor Apache&lt;/strong&gt; accesible solo desde los distritos 11 y 12 (puerto 80).&lt;/p&gt;
-&lt;h3 id=&#34;pasos-1&#34;&gt;Pasos:
-&lt;/h3&gt;&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;Sustituir VPCS por Debian con Apache2.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Asignar IP estática.&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h2 id="ejercicio-5-servidor-web-del-distrito-13"&gt;Ejercicio 5: Servidor web del distrito 13
+&lt;/h2&gt;&lt;p&gt;Los juegos del hambre van avanzando y algunos participantes han descubierto al fin el secreto del distrito 13. No parece existir vida en él, pero hay un servidor web lleno de documentos muy útiles para sobrevivir.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Monta un servidor web en el distrito 13 que sea accesible mediante ACL extendidas solo para los participantes de los distritos 11 y 12. La comunicación se establecerá por el puerto 80. Documenta el proceso y demuestra su funcionamiento.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Para montar el servidor sustituiremos la máquina VPCS por un Debian al que le instalaremos Apache, le daremos acceso a una nube NAT momentáneamente.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image5.png"
+width="563"
+height="293"
+srcset="http://sergiojimenez.org/post/hunger-games/image5_hu_bb9ac5dacccb736c.png 480w, http://sergiojimenez.org/post/hunger-games/image5_hu_c4081066c1ada4e1.png 1024w"
+loading="lazy"
+alt="Nube NAT"
+class="gallery-image"
+data-flex-grow="192"
+data-flex-basis="461px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Instalamos Apache2 y le damos una IP estática, ya podemos quitar la nube.&lt;/p&gt;
 &lt;p&gt;Si hacemos ping desde las distintas máquinas veremos que tenemos acceso desde los Distritos 2 y 11.&lt;/p&gt;
 &lt;p&gt;En primer lugar modificaremos la ACL de R4 para permitirle el acceso al distrito 12.&lt;/p&gt;
-&lt;ol start=&#34;3&#34;&gt;
-&lt;li&gt;
-&lt;p&gt;Modificar ACLs:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;En &lt;strong&gt;R4&lt;/strong&gt; permitir acceso del distrito 12 antes del &lt;code&gt;deny ip any any&lt;/code&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;El &amp;lsquo;45&amp;rsquo; colocará la regla justo antes del deny any. - Comprobación:&lt;/p&gt;
-&lt;p&gt;Ahora denegamos el paso al distrito 2 desde R3 de igual forma modificando la ACL ya establecida.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;En &lt;strong&gt;R3&lt;/strong&gt; denegar acceso del distrito 2.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Con la ACL aplicada confirmamos acceso desde los distritos 11 y 12.&lt;/p&gt;
-&lt;p&gt;Si intentamos conectarnos desde distrito 2 vemos que la conexión no se realiza:&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;Ahora que solo tienen acceso los Distritos 11 y 12 cortaremos este a únicamente el puerto 80 mediante una ACL en R5.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;En &lt;strong&gt;R5&lt;/strong&gt; permitir solo puerto 80.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;comprobaciones&#34;&gt;Comprobaciones:
-&lt;/h3&gt;&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;Ping bloqueado (ICMP ≠ puerto 80).&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Acceso web permitido desde distritos 11 y 12 (navegador Firefox en TinyCore).&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;Como las ACL se leen en orden debemos añadir la línea que permita el paso antes de &amp;lsquo;deny ip any any&amp;rsquo;.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image10.png"
+width="482"
+height="181"
+srcset="http://sergiojimenez.org/post/hunger-games/image10_hu_9685d114546cb28f.png 480w, http://sergiojimenez.org/post/hunger-games/image10_hu_59899a2d47dcf0c5.png 1024w"
+loading="lazy"
+alt="Modificación ACL R4"
+class="gallery-image"
+data-flex-grow="266"
+data-flex-basis="639px"
+&gt;&lt;/p&gt;
+&lt;p&gt;El &amp;lsquo;45&amp;rsquo; colocará la regla justo antes del deny any.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Comprobación:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image1.png"
+width="434"
+height="46"
+srcset="http://sergiojimenez.org/post/hunger-games/image1_hu_c9de14823df9aaab.png 480w, http://sergiojimenez.org/post/hunger-games/image1_hu_6b1b0867cebcaa23.png 1024w"
+loading="lazy"
+alt="Comprobación acceso D12"
+class="gallery-image"
+data-flex-grow="943"
+data-flex-basis="2264px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Ahora denegamos el paso al distrito 2 desde R3 de igual forma modificando la ACL ya establecida:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image33.png"
+width="388"
+height="94"
+srcset="http://sergiojimenez.org/post/hunger-games/image33_hu_f6865308e4216b99.png 480w, http://sergiojimenez.org/post/hunger-games/image33_hu_9f846f5a192f65b8.png 1024w"
+loading="lazy"
+alt="Denegación D2"
+class="gallery-image"
+data-flex-grow="412"
+data-flex-basis="990px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Comprobación:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image18.png"
+width="340"
+height="25"
+srcset="http://sergiojimenez.org/post/hunger-games/image18_hu_f20092ab5171e5cb.png 480w, http://sergiojimenez.org/post/hunger-games/image18_hu_c67cfe3e0c8dd56c.png 1024w"
+loading="lazy"
+alt="Comprobación acceso denegado D2"
+class="gallery-image"
+data-flex-grow="1360"
+data-flex-basis="3264px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Ahora que solo tienen acceso los Distritos 11 y 12 cortaremos este a únicamente el puerto 80 mediante una ACL en R5:&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image19.png"
+width="344"
+height="70"
+srcset="http://sergiojimenez.org/post/hunger-games/image19_hu_217be6607d371056.png 480w, http://sergiojimenez.org/post/hunger-games/image19_hu_e5915fc179bc4c49.png 1024w"
+loading="lazy"
+alt="ACL puerto 80 R5"
+class="gallery-image"
+data-flex-grow="491"
+data-flex-basis="1179px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image35.png"
+width="244"
+height="61"
+srcset="http://sergiojimenez.org/post/hunger-games/image35_hu_51cadd33a93de7f9.png 480w, http://sergiojimenez.org/post/hunger-games/image35_hu_828f1a07ba3b9fdf.png 1024w"
+loading="lazy"
+alt="Aplicar ACL R5"
+class="gallery-image"
+data-flex-grow="400"
+data-flex-basis="960px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Si ahora probamos a volver a hacer un ping nos encontramos con que la ACL nos lo cortará, esto es debido a que el protocolo ICMP (ping) no trabaja en el puerto 80.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image26.png"
+width="286"
+height="99"
+srcset="http://sergiojimenez.org/post/hunger-games/image26_hu_e8c6ae8a39f63f7.png 480w, http://sergiojimenez.org/post/hunger-games/image26_hu_1b1e58c9cccd713.png 1024w"
+loading="lazy"
+alt="Ping bloqueado"
+class="gallery-image"
+data-flex-grow="288"
+data-flex-basis="693px"
+&gt;&lt;/p&gt;
 &lt;p&gt;Para comprobar que el servidor web es accesible desde los distritos 11 y 12 vamos a añadir 1 tinycore con firefox al switch de dichos distritos.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image39.png"
+width="1566"
+height="788"
+srcset="http://sergiojimenez.org/post/hunger-games/image39_hu_689749b943345573.png 480w, http://sergiojimenez.org/post/hunger-games/image39_hu_154b36fdc2c47cfb.png 1024w"
+loading="lazy"
+alt="TinyCore setup"
+class="gallery-image"
+data-flex-grow="198"
+data-flex-basis="476px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Será necesario configurar la IP de ambas máquinas en rango. Una vez hecho podremos acceder al servidor web.&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image36.png"
+width="392"
+height="158"
+srcset="http://sergiojimenez.org/post/hunger-games/image36_hu_cdc0455713f17d84.png 480w, http://sergiojimenez.org/post/hunger-games/image36_hu_b9d5d66a5c7d05d1.png 1024w"
+loading="lazy"
+alt="Acceso web Distrito 12"
+class="gallery-image"
+data-flex-grow="248"
+data-flex-basis="595px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image15.png"
+width="483"
+height="122"
+srcset="http://sergiojimenez.org/post/hunger-games/image15_hu_fa3d6a62d124754d.png 480w, http://sergiojimenez.org/post/hunger-games/image15_hu_831614742403b32e.png 1024w"
+loading="lazy"
+alt="Acceso web Distrito 11"
+class="gallery-image"
+data-flex-grow="395"
+data-flex-basis="950px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="http://sergiojimenez.org/post/hunger-games/image37.png"
+width="1603"
+height="629"
+srcset="http://sergiojimenez.org/post/hunger-games/image37_hu_b6df842b0e8590c2.png 480w, http://sergiojimenez.org/post/hunger-games/image37_hu_663acd1740d76fde.png 1024w"
+loading="lazy"
+alt="Página web del Distrito 13"
+class="gallery-image"
+data-flex-grow="254"
+data-flex-basis="611px"
+&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;p&gt;&lt;strong&gt;Fin del documento&lt;/strong&gt;&lt;/p&gt;
-</description>
-        </item>
-        
-    </channel>
-</rss>
+&lt;p&gt;&lt;strong&gt;Fin del documento&lt;/strong&gt;&lt;/p&gt;</description></item></channel></rss>

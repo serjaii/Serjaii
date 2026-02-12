@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Bios on SerjAii</title><link>http://sergiojimenez.org/tags/bios/</link><description>Recent content in Bios on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>es</language><lastBuildDate>Tue, 02 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://sergiojimenez.org/tags/bios/index.xml" rel="self" type="application/rss+xml"/><item><title>Creación de un Sistema Automatizado de Instalación para Debian 13 (Trixie)</title><link>http://sergiojimenez.org/post/creacion-sistema-automatizado-debian-13/</link><pubDate>Tue, 02 Dec 2025 00:00:00 +0000</pubDate><guid>http://sergiojimenez.org/post/creacion-sistema-automatizado-debian-13/</guid><description>&lt;img src="http://sergiojimenez.org/post/creacion-sistema-automatizado-debian-13/cover.jpg" alt="Featured image of post Creación de un Sistema Automatizado de Instalación para Debian 13 (Trixie)" /&gt;&lt;h1 id="automatización-de-instalación-de-debian-13-con-preseed-y-custom-iso"&gt;Automatización de Instalación de Debian 13 con Preseed y Custom ISO
+&lt;/h1&gt;&lt;p&gt;En este artículo documentaré el proceso que he seguido para crear una imagen ISO de instalación totalmente desatendida para &lt;strong&gt;Debian 13 (Trixie)&lt;/strong&gt;. El objetivo de este proyecto es configurar el sistema para que responda automáticamente a todas las preguntas del instalador, configure la red, usuarios, particiones y paquetes adicionales, generando una ISO híbrida compatible tanto con sistemas &lt;strong&gt;BIOS&lt;/strong&gt; como &lt;strong&gt;UEFI&lt;/strong&gt;.&lt;/p&gt;
+&lt;h2 id="objetivos-del-proyecto"&gt;Objetivos del Proyecto
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Instalación Desatendida&lt;/strong&gt;: Automatizar respuestas (idioma, teclado, red, espejo, etc.).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Seguridad&lt;/strong&gt;: Las contraseñas de usuario deben estar encriptadas, no en texto plano.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Particionamiento&lt;/strong&gt;: Esquema personalizado (en este caso, particionado regular con separación de &lt;code&gt;/&lt;/code&gt;, &lt;code&gt;/home&lt;/code&gt; y &lt;code&gt;/boot&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Compatibilidad&lt;/strong&gt;: La ISO debe arrancar tanto en equipos con firmware BIOS como UEFI.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Paquetes Adicionales&lt;/strong&gt;: Instalación automática de &lt;code&gt;firewalld&lt;/code&gt;, &lt;code&gt;openssh-server&lt;/code&gt; y entorno de escritorio GNOME.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="herramientas-necesarias"&gt;Herramientas Necesarias
+&lt;/h2&gt;&lt;p&gt;Para realizar este trabajo, partimos de una imagen &lt;code&gt;netinst&lt;/code&gt; oficial de Debian y utilizamos la herramienta &lt;code&gt;xorriso&lt;/code&gt; para manipular la imagen.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install xorriso
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Descargamos la imagen base:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="el-corazón-de-la-automatización-preseedcfg"&gt;El Corazón de la Automatización: &lt;code&gt;preseed.cfg&lt;/code&gt;
+&lt;/h2&gt;&lt;p&gt;El fichero &lt;em&gt;preseed&lt;/em&gt; es donde definimos todas las respuestas para el instalador de Debian (&lt;code&gt;d-i&lt;/code&gt;). A continuación, muestro la configuración final que he utilizado.&lt;/p&gt;
+&lt;p&gt;Puntos clave de mi configuración:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Localización&lt;/strong&gt;: Configurado para España (&lt;code&gt;es_ES.UTF-8&lt;/code&gt;, zona horaria &lt;code&gt;Europe/Madrid&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Red&lt;/strong&gt;: Configuración automática por DHCP.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Usuario&lt;/strong&gt;: Creación del usuario &lt;code&gt;serjaii&lt;/code&gt; con contraseña encriptada (generada con &lt;code&gt;mkpasswd -m sha-512&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Particionamiento&lt;/strong&gt;: He definido una receta personalizada &lt;code&gt;myregular&lt;/code&gt; que crea particiones para EFI, &lt;code&gt;/boot&lt;/code&gt; (ext2), &lt;code&gt;/&lt;/code&gt; (ext4), &lt;code&gt;/home&lt;/code&gt; (ext4) y &lt;code&gt;swap&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Paquetes&lt;/strong&gt;: Selección de &lt;code&gt;gnome-desktop&lt;/code&gt;, &lt;code&gt;openssh-server&lt;/code&gt;, &lt;code&gt;build-essential&lt;/code&gt; y &lt;code&gt;firewalld&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex="0"&gt;&lt;code class="language-conf" data-lang="conf"&gt;# preseed.cfg
+# Localización y Teclado
+d-i debian-installer/locale string es_ES.UTF-8
+d-i debian-installer/language string es
+d-i debian-installer/country string ES
+d-i keyboard-configuration/xkb-keymap select es
+# Red
+d-i netcfg/choose_interface select auto
+d-i netcfg/get_hostname string debian
+d-i netcfg/get_domain string sergiojimenez.org
+d-i netcfg/wireless_wep string
+# Espejo (Mirror)
+d-i mirror/country string manual
+d-i mirror/http/hostname string ftp.es.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+# Usuarios (Root deshabilitado, usuario serjaii creado)
+d-i passwd/root-login boolean false
+d-i passwd/user-fullname string Sergio Jimenez
+d-i passwd/username string serjaii
+# La contraseña debe ser el hash, no el texto plano
+d-i passwd/user-password-crypted password $6$c3X/q67VgcznJhFw$uXRYRdnOpMeYtO/YGXJEXDvYj0njGYxBGbxTn5BZqHocFPCauvrGQm16QzqEUb1aEa1ZZu5NlrTIjznyP9D/y41
+# Reloj
+d-i clock-setup/utc boolean true
+d-i time/zone string Europe/Madrid
+d-i clock-setup/ntp boolean true
+# Particionamiento
+d-i partman-auto/method string regular
+d-i partman-auto/expert_recipe string \
+myregular :: \
+128 128 128 free \
+$iflabel{ gpt } \
+$reusemethod{ } \
+method{ efi } \
+format{ } \
+. \
+512 512 512 ext2 \
+$defaultignore{ } \
+method{ format } format{ } \
+use_filesystem{ } filesystem{ ext2 } \
+mountpoint{ /boot } \
+$bootable{ } \
+. \
+5000 5050 -1 ext4 \
+$primary{ } \
+method{ format } format{ } \
+use_filesystem{ } filesystem{ ext4 } \
+mountpoint{ / } \
+. \
+2000 2030 -1 ext4 \
+method{ format } format{ } \
+use_filesystem{ } filesystem{ ext4 } \
+mountpoint{ /home } \
+. \
+1024 1020 -1 linux-swap \
+method{ swap } format{ } \
+.
+d-i partman-auto/choose_recipe select myregular
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+# Selección de Paquetes
+d-i apt-setup/cdrom/set-first boolean false
+tasksel tasksel/first multiselect standard, gnome-desktop
+d-i pkgsel/include string openssh-server build-essential firewalld
+popularity-contest popularity-contest/participate boolean false
+# Cargador de Arranque (GRUB)
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean true
+d-i grub-installer/bootdev string default
+# Finalización
+d-i finish-install/reboot_in_progress note
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="automatización-del-proceso-el-script"&gt;Automatización del Proceso: El Script
+&lt;/h2&gt;&lt;p&gt;Para evitar realizar los pasos de extracción, modificación y reempaquetado manualmente cada vez que necesitaba ajustar el &lt;em&gt;preseed&lt;/em&gt;, creé un script en Bash (&lt;code&gt;automatizado_preseed.sh&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;Este script realiza las siguientes tareas:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Limpia&lt;/strong&gt; el entorno de trabajo anterior.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Extrae&lt;/strong&gt; el contenido de la ISO original usando &lt;code&gt;xorriso&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Inyecta&lt;/strong&gt; el fichero &lt;code&gt;preseed.cfg&lt;/code&gt; dentro del archivo &lt;code&gt;initrd.gz&lt;/code&gt; (esto es crucial para que el instalador cargue nuestra configuración automáticamente).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Modifica&lt;/strong&gt; los ficheros de configuración de arranque (&lt;code&gt;isolinux.cfg&lt;/code&gt; para BIOS y &lt;code&gt;grub.cfg&lt;/code&gt; para UEFI) estableciendo los &lt;em&gt;timeouts&lt;/em&gt; a 0 para que no pida confirmación al usuario.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Regenera&lt;/strong&gt; la lista de sumas MD5 (&lt;code&gt;md5sum.txt&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Construye&lt;/strong&gt; la nueva ISO híbrida bootable.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id="script-automatizado_preseedsh"&gt;Script &lt;code&gt;automatizado_preseed.sh&lt;/code&gt;
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;#!/bin/bash
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Detener el script si hay algún error&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;set -e
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# --- VARIABLES ---&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ISO_ORIGINAL&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;debian-13.1.0-amd64-netinst.iso&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ISO_FINAL&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;preseed-debian13.iso&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;DIR_TRABAJO&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;iso&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;PRESEED_FILE&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;preseed.cfg&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 0. Limpieza inicial y Chequeo de Espacio ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Verificamos espacio (mínimo 2GB libres recomendados)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;FREE_SPACE&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;df . --output&lt;span style="color:#f92672"&gt;=&lt;/span&gt;avail | tail -1&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$FREE_SPACE&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; -lt &lt;span style="color:#ae81ff"&gt;2000000&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;ADVERTENCIA: Tienes menos de 2GB libres. Podría fallar.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; df -h .
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;Esperando 3 segundos...&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sleep &lt;span style="color:#ae81ff"&gt;3&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; -d &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;-&amp;gt; Borrando directorio &amp;#39;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#39; existente...&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo rm -rf &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; -f &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;-&amp;gt; Borrando archivo &amp;#39;&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;&amp;#39; existente...&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo rm -f &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# --- COMPROBACIONES ---&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; ! -f &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$ISO_ORIGINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;Error: No se encuentra la imagen &lt;/span&gt;$ISO_ORIGINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; exit &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; ! -f &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$PRESEED_FILE&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;Error: No se encuentra el fichero &lt;/span&gt;$PRESEED_FILE&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; exit &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 1. Extrayendo ISO original ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Usamos xorriso para extraer&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo xorriso -osirrox on -indev &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$ISO_ORIGINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; -extract / &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 2. Inyectando Preseed en initrd ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod +w -R &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/install.amd/&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo gunzip &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/install.amd/initrd.gz&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Inyectamos el preseed.cfg&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$PRESEED_FILE&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; | sudo cpio -H newc -o -A -F &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/install.amd/initrd&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo gzip &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/install.amd/initrd&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod -w -R &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/install.amd/&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 3. Configurando arranque BIOS (Isolinux) ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;CFG_ISOLINUX&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/isolinux/isolinux.cfg&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod +w &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Modificaciones para Isolinux&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/^default/#default/g&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/^timeout.*/timeout 0/g&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; grep -q &lt;span style="color:#e6db74"&gt;&amp;#34;prompt&amp;#34;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/^prompt.*/prompt 0/g&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;prompt 0&amp;#34;&lt;/span&gt; | sudo tee -a &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod -w &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_ISOLINUX&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 4. Configurando arranque UEFI (GRUB) ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;CFG_GRUB&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;/boot/grub/grub.cfg&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod +w &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Modificaciones para GRUB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; grep -q &lt;span style="color:#e6db74"&gt;&amp;#34;set timeout=&amp;#34;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/set timeout=.*/set timeout=0/g&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;set timeout=0&amp;#34;&lt;/span&gt; | sudo tee -a &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; grep -q &lt;span style="color:#e6db74"&gt;&amp;#34;set default=&amp;#34;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/set default=.*/set default=1/g&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;set default=1&amp;#34;&lt;/span&gt; | sudo tee -a &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; ! grep -q &lt;span style="color:#e6db74"&gt;&amp;#34;set timeout_style=hidden&amp;#34;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;1i set timeout_style=hidden&amp;#39;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod -w &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$CFG_GRUB&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 5. Asegurando Permisos y Regenerando MD5 ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# 1. Aseguramos que TODOS los archivos sean legibles por todos&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod -R u+w,a+r &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cd &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;rm -f md5sum.txt
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;Generando md5sum.txt limpio...&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;find . -type f -not -name &lt;span style="color:#e6db74"&gt;&amp;#39;md5sum.txt&amp;#39;&lt;/span&gt; -not -path &lt;span style="color:#e6db74"&gt;&amp;#39;*/debian/*&amp;#39;&lt;/span&gt; -print0 | &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; xargs -0 md5sum | &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; sed &lt;span style="color:#e6db74"&gt;&amp;#39;s| \./| |&amp;#39;&lt;/span&gt; &amp;gt; md5sum.txt
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod a-w md5sum.txt
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cd ..
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== 6. Creando ISO final (&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;) con XORRISO ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cd &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$DIR_TRABAJO&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo xorriso -as mkisofs &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -r -V &lt;span style="color:#e6db74"&gt;&amp;#39;Debian_Custom&amp;#39;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -o &lt;span style="color:#e6db74"&gt;&amp;#34;../&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -J -joliet-long &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -b isolinux/isolinux.bin &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -c isolinux/boot.cat &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -boot-load-size &lt;span style="color:#ae81ff"&gt;4&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -boot-info-table &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -no-emul-boot &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -eltorito-alt-boot &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -e boot/grub/efi.img &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -no-emul-boot &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; -isohybrid-gpt-basdat &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; .
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cd ..
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;=== ¡Proceso completado! ===&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -lh &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$ISO_FINAL&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="ejecución-y-resultado"&gt;Ejecución y Resultado
+&lt;/h2&gt;&lt;p&gt;Para generar la ISO, simplemente ejecutamos el script con permisos de superusuario:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo bash automatizado_preseed.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;El resultado es un archivo &lt;code&gt;preseed-debian13.iso&lt;/code&gt; de aproximadamente 968MB. Esta imagen puede ser grabada en un USB o utilizada en una máquina virtual (VirtualBox, KVM, VMware). Al arrancar, el sistema iniciará automáticamente la instalación sin realizar ninguna pregunta, y al finalizar, tendremos un sistema Debian 13 con entorno GNOME, usuario configurado y particiones listas para usar.&lt;/p&gt;
+&lt;h2 id="instalación-por-red"&gt;Instalación por Red
+&lt;/h2&gt;&lt;p&gt;Además de la instalación mediante USB o imagen ISO directa, he habilitado la posibilidad de realizar la instalación a través de la red utilizando los recursos alojados en este mismo servidor.&lt;/p&gt;
+&lt;p&gt;He subido tanto la imagen ISO personalizada como el fichero &lt;code&gt;preseed.cfg&lt;/code&gt; para que estén accesibles públicamente.&lt;/p&gt;
+&lt;h3 id="descarga-de-recursos"&gt;Descarga de Recursos
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Imagen ISO Personalizada&lt;/strong&gt;: &lt;a class="link" href="http://sergiojimenez.org/isos/preseed-debian13.iso" &gt;preseed-debian13.iso&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Fichero Preseed&lt;/strong&gt;: &lt;a class="link" href="http://sergiojimenez.org/isos/preseed.cfg" &gt;preseed.cfg&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="cómo-usar-el-preseed-por-red"&gt;Cómo usar el Preseed por Red
+&lt;/h3&gt;&lt;p&gt;Si dispones de una imagen de instalación estándar de Debian (netinst) y quieres aplicar mi configuración automatizada sin modificar la ISO, puedes hacerlo pasando la URL del preseed como parámetro de arranque.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Arranca el instalador de Debian.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;En el menú de arranque (GRUB o Isolinux), presiona &lt;code&gt;TAB&lt;/code&gt; o &lt;code&gt;e&lt;/code&gt; para editar las opciones de arranque.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Añade el siguiente parámetro a la línea de comandos del kernel:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;auto url=http://sergiojimenez.org/isos/preseed.cfg
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Inicia el arranque. El instalador descargará el fichero de configuración y procederá con la instalación desatendida tal como se ha definido.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Esto es especialmente útil para entornos de virtualización o instalaciones masivas donde no queremos mantener múltiples imágenes ISO modificadas.&lt;/p&gt;
+&lt;h2 id="guía-manual-de-instalación-pxe--preseed"&gt;Guía Manual de Instalación PXE + Preseed
+&lt;/h2&gt;&lt;h3 id="1-prerrequisitos-e-instalación-de-paquetes"&gt;1. Prerrequisitos e Instalación de Paquetes
+&lt;/h3&gt;&lt;p&gt;Partimos de una máquina con Debian (server) que actuará como servidor de infraestructura. Necesitaremos instalar los servicios de DHCP, TFTP y Web.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install isc-dhcp-server tftpd-hpa apache2 wget
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="2-configuración-del-servidor-dhcp"&gt;2. Configuración del Servidor DHCP
+&lt;/h3&gt;&lt;p&gt;El servidor DHCP es el encargado de asignar IP a los clientes y decirles dónde encontrar el archivo de arranque.&lt;/p&gt;
+&lt;p&gt;Editamos el archivo &lt;code&gt;/etc/dhcp/dhcpd.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;option arch code 93 &lt;span style="color:#f92672"&gt;=&lt;/span&gt; unsigned integer 16;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;default-lease-time 600;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;max-lease-time 7200;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;authoritative;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Ajustar la subred según tu entorno de red actual&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;subnet 192.168.122.0 netmask 255.255.255.0 &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; range 192.168.122.100 192.168.122.200;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; option routers 192.168.122.1;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; option domain-name-servers 8.8.8.8;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; class &lt;span style="color:#e6db74"&gt;&amp;#34;pxeclients&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; match &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; substring &lt;span style="color:#f92672"&gt;(&lt;/span&gt;option vendor-class-identifier, 0, 9&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;PXEClient&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#75715e"&gt;# IP de este mismo servidor (PXE)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; next-server 192.168.122.18;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#75715e"&gt;# Lógica para servir el fichero correcto según sea BIOS o UEFI&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; option arch &lt;span style="color:#f92672"&gt;=&lt;/span&gt; 00:07 &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; filename &lt;span style="color:#e6db74"&gt;&amp;#34;debian-installer/amd64/bootnetx64.efi&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;}&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;else&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; option arch &lt;span style="color:#f92672"&gt;=&lt;/span&gt; 00:09 &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; filename &lt;span style="color:#e6db74"&gt;&amp;#34;debian-installer/amd64/bootnetx64.efi&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;}&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;else&lt;/span&gt; &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; filename &lt;span style="color:#e6db74"&gt;&amp;#34;pxelinux.0&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Además, definimos la interfaz de escucha en &lt;code&gt;/etc/default/isc-dhcp-server&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;INTERFACESv4&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;ens3&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="3-configuración-tftp-y-ficheros-de-arranque-netboot"&gt;3. Configuración TFTP y Ficheros de Arranque (Netboot)
+&lt;/h3&gt;&lt;p&gt;El servicio TFTP servirá el kernel y el instalador inicial. Descargamos la imagen &lt;em&gt;netboot&lt;/em&gt; diaria de Debian Trixie y la extraemos en el directorio raíz del TFTP (&lt;code&gt;/srv/tftp&lt;/code&gt;).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Limpiamos directorio anterior si existe&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo rm -rf /srv/tftp/*
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Descargamos la imagen netboot&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;wget https://d-i.debian.org/daily-images/amd64/daily/netboot/netboot.tar.gz
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Extraemos en el directorio del servidor TFTP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo tar -xzf netboot.tar.gz -C /srv/tftp/
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown -R tftp:tftp /srv/tftp
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="4-automatización-del-arranque-boot-menus"&gt;4. Automatización del Arranque (Boot Menus)
+&lt;/h3&gt;&lt;p&gt;Para evitar preguntas durante la carga inicial y forzar el uso de nuestro &lt;em&gt;preseed&lt;/em&gt;, debemos editar los menús de arranque por defecto.&lt;/p&gt;
+&lt;h4 id="configuración-para-bios-legacy"&gt;Configuración para BIOS (Legacy)
+&lt;/h4&gt;&lt;p&gt;Editamos el archivo &lt;code&gt;/srv/tftp/pxelinux.cfg/default&lt;/code&gt;. Creamos una entrada que pase los parámetros &lt;code&gt;auto=true&lt;/code&gt;, &lt;code&gt;priority=critical&lt;/code&gt; y la URL de nuestro preseed.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;DEFAULT install
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;LABEL install
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; KERNEL debian-installer/amd64/linux
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; APPEND vga&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;788&lt;/span&gt; initrd&lt;span style="color:#f92672"&gt;=&lt;/span&gt;debian-installer/amd64/initrd.gz auto&lt;span style="color:#f92672"&gt;=&lt;/span&gt;true priority&lt;span style="color:#f92672"&gt;=&lt;/span&gt;critical url&lt;span style="color:#f92672"&gt;=&lt;/span&gt;http://192.168.122.18/preseed.cfg --- quiet
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id="configuración-para-uefi-grub"&gt;Configuración para UEFI (GRUB)
+&lt;/h4&gt;&lt;p&gt;Editamos el archivo &lt;code&gt;/srv/tftp/debian-installer/amd64/grub/grub.cfg&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;set default&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;set timeout&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;menuentry &lt;span style="color:#e6db74"&gt;&amp;#34;Install Debian 13 (Automated)&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; linux /debian-installer/amd64/linux auto&lt;span style="color:#f92672"&gt;=&lt;/span&gt;true priority&lt;span style="color:#f92672"&gt;=&lt;/span&gt;critical url&lt;span style="color:#f92672"&gt;=&lt;/span&gt;http://192.168.122.18/preseed.cfg --- quiet
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; initrd /debian-installer/amd64/initrd.gz
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="5-publicación-del-fichero-preseed"&gt;5. Publicación del Fichero Preseed
+&lt;/h3&gt;&lt;p&gt;El instalador buscará el archivo de configuración en la URL que especificamos. Copiamos nuestro &lt;code&gt;preseed.cfg&lt;/code&gt; al directorio raíz del servidor web Apache.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo cp preseed.cfg /var/www/html/
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;644&lt;/span&gt; /var/www/html/preseed.cfg
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="6-finalización"&gt;6. Finalización
+&lt;/h3&gt;&lt;p&gt;Reiniciamos los servicios para aplicar cambios:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart isc-dhcp-server
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart tftpd-hpa
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Ahora el servidor está listo para recibir peticiones de arranque por red.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3 id="automatización-mediante-script"&gt;Automatización mediante Script
+&lt;/h3&gt;&lt;p&gt;Para simplificar y estandarizar este proceso, he desarrollado un script llamado &lt;code&gt;install_pxe.sh&lt;/code&gt; que automatiza &lt;strong&gt;todos los pasos descritos anteriormente&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Para usarlo, basta con ejecutar:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ./install_pxe.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Descargar Script: &lt;a class="link" href="http://sergiojimenez.org/files/install_pxe.sh" &gt;install_pxe.sh&lt;/a&gt;&lt;/p&gt;</description></item></channel></rss>

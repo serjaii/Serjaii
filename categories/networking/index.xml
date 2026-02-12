@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Networking on SerjAii</title><link>http://sergiojimenez.org/categories/networking/</link><description>Recent content in Networking on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>es</language><lastBuildDate>Wed, 03 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://sergiojimenez.org/categories/networking/index.xml" rel="self" type="application/rss+xml"/><item><title>Interconexión de Servidores de Bases de Datos: Oracle y PostgreSQL</title><link>http://sergiojimenez.org/post/interconexion-servidores-bd/</link><pubDate>Wed, 03 Dec 2025 00:00:00 +0000</pubDate><guid>http://sergiojimenez.org/post/interconexion-servidores-bd/</guid><description>&lt;img src="http://sergiojimenez.org/post/interconexion-servidores-bd/cover.png" alt="Featured image of post Interconexión de Servidores de Bases de Datos: Oracle y PostgreSQL" /&gt;&lt;h1 id="interconexión-de-servidores"&gt;Interconexión de Servidores
+&lt;/h1&gt;&lt;p&gt;En este artículo detallo el proceso realizado para interconectar servidores de bases de datos Oracle y PostgreSQL en diferentes configuraciones: Oracle-Oracle, PostgreSQL-PostgreSQL y conexiones heterogéneas entre ambos sistemas.&lt;/p&gt;
+&lt;h2 id="preparación-del-entorno"&gt;Preparación del Entorno
+&lt;/h2&gt;&lt;p&gt;Para realizar esta práctica, he partido de una máquina virtual existente (&lt;code&gt;bd&lt;/code&gt;) que ya contaba con los servidores de base de datos instalados. He clonado esta máquina para crear un segundo nodo (&lt;code&gt;bd2&lt;/code&gt;).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;virt-clone --original bd --name bd2 --auto-clone
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="configuración-de-red-en-bd2"&gt;Configuración de red en bd2
+&lt;/h3&gt;&lt;p&gt;Una vez clonada, he modificado la configuración de red de &amp;lsquo;bd2&amp;rsquo; para asignarle la IP &lt;strong&gt;192.168.122.127&lt;/strong&gt; y cambiar su hostname, evitando conflictos con la máquina original (cuya IP es 192.168.122.126).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Cambiar IP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/192.168.122.126/192.168.122.127/g&amp;#39;&lt;/span&gt; /etc/network/interfaces
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Cambiar hostname&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sed -i &lt;span style="color:#e6db74"&gt;&amp;#39;s/bd/bd2/g&amp;#39;&lt;/span&gt; /etc/hosts
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo hostnamectl set-hostname bd2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="renombrar-bases-de-datos-en-bd2"&gt;Renombrar bases de datos en bd2
+&lt;/h3&gt;&lt;h4 id="postgresql"&gt;PostgreSQL
+&lt;/h4&gt;&lt;p&gt;En el servidor PostgreSQL de &amp;lsquo;bd2&amp;rsquo;, renombré la base de datos a &lt;code&gt;prueba_db_2&lt;/code&gt; para distinguirla claramente.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; prueba_db &lt;span style="color:#66d9ef"&gt;RENAME&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; prueba_db_2;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id="oracle"&gt;Oracle
+&lt;/h4&gt;&lt;p&gt;Para Oracle, realicé una serie de comandos para cerrar, renombrar y volver a abrir la Pluggable Database como &lt;code&gt;ORCLPDB2&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; PLUGGABLE &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; ORCLPDB1 &lt;span style="color:#66d9ef"&gt;CLOSE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;IMMEDIATE&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; PLUGGABLE &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; ORCLPDB1 &lt;span style="color:#66d9ef"&gt;OPEN&lt;/span&gt; RESTRICTED;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; PLUGGABLE &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; ORCLPDB1 &lt;span style="color:#66d9ef"&gt;RENAME&lt;/span&gt; GLOBAL_NAME &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; ORCLPDB2;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; PLUGGABLE &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; ORCLPDB2 &lt;span style="color:#66d9ef"&gt;CLOSE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;IMMEDIATE&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; PLUGGABLE &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; ORCLPDB2 &lt;span style="color:#66d9ef"&gt;OPEN&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SYSTEM&lt;/span&gt; REGISTER;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="1-interconexión-oracle-oracle"&gt;1. Interconexión Oracle-Oracle
+&lt;/h2&gt;&lt;p&gt;Configuré un Database Link para conectar desde la base de datos Oracle en &lt;code&gt;bd&lt;/code&gt; hacia la base de datos Oracle en &lt;code&gt;bd2&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="configuración-en-bd"&gt;Configuración en ‘bd’
+&lt;/h3&gt;&lt;p&gt;Edité el archivo &lt;code&gt;tnsnames.ora&lt;/code&gt; para definir la conexión hacia &lt;code&gt;bd2&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Archivo&lt;/strong&gt;: &lt;code&gt;/opt/oracle/homes/OraDBHome21cEE/network/admin/tnsnames.ora&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;BD2_LINK&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (DESCRIPTION =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.122.127)(PORT = 1521))
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (CONNECT_DATA =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SERVER = DEDICATED)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SERVICE_NAME = ORCLPDB2)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="configuración-en-bd2"&gt;Configuración en ‘bd2’
+&lt;/h3&gt;&lt;p&gt;Me aseguré de que el listener estuviera escuchando correctamente y creé un usuario específico para la conexión.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SYSTEM&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SET&lt;/span&gt; local_listener&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#39;(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.122.127)(PORT=1521))&amp;#39;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SCOPE&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#66d9ef"&gt;BOTH&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SYSTEM&lt;/span&gt; REGISTER;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;-- Crear usuario en ORCLPDB2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ALTER&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SESSION&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SET&lt;/span&gt; CONTAINER&lt;span style="color:#f92672"&gt;=&lt;/span&gt;ORCLPDB2;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;USER&lt;/span&gt; serjaii IDENTIFIED &lt;span style="color:#66d9ef"&gt;BY&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;0191&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;GRANT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;CONNECT&lt;/span&gt;, RESOURCE &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; serjaii;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;GRANT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SESSION&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; serjaii;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="crear-database-link"&gt;Crear Database Link
+&lt;/h3&gt;&lt;p&gt;En &lt;code&gt;bd&lt;/code&gt;, creé el enlace utilizando las credenciales del usuario creado anteriormente.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; LINK link_to_bd2
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;CONNECT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; serjaii IDENTIFIED &lt;span style="color:#66d9ef"&gt;BY&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;0191&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;USING&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;BD2_LINK&amp;#39;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="comprobación"&gt;Comprobación
+&lt;/h3&gt;&lt;p&gt;Realicé una consulta distribuida para verificar el enlace:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;SELECT&lt;/span&gt; e.ename &lt;span style="color:#66d9ef"&gt;AS&lt;/span&gt; empleado_local, d.dname &lt;span style="color:#66d9ef"&gt;AS&lt;/span&gt; departamento_remoto
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; emp e
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;JOIN&lt;/span&gt; dept&lt;span style="color:#f92672"&gt;@&lt;/span&gt;link_to_bd2 d &lt;span style="color:#66d9ef"&gt;ON&lt;/span&gt; e.deptno &lt;span style="color:#f92672"&gt;=&lt;/span&gt; d.deptno
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;WHERE&lt;/span&gt; e.deptno &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;10&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Resultado:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;EMPLEADO_L DEPARTAMENTO_REMOTO
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;---------- ------------------
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;CLARK ACCOUNTING
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;KING ACCOUNTING
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;MILLER ACCOUNTING
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="2-interconexión-postgresql-postgresql"&gt;2. Interconexión PostgreSQL-PostgreSQL
+&lt;/h2&gt;&lt;p&gt;Para conectar dos servidores PostgreSQL, utilicé la extensión &lt;code&gt;dblink&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="configuración-previa"&gt;Configuración Previa
+&lt;/h3&gt;&lt;p&gt;Es necesario asegurar que ambos servidores permitan conexiones remotas:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;pg_hba.conf&lt;/code&gt;: añadir &lt;code&gt;host all all 0.0.0.0/0 md5&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;postgresql.conf&lt;/code&gt;: establecer &lt;code&gt;listen_addresses = '*'&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="crear-extensión-dblink"&gt;Crear extensión dblink
+&lt;/h3&gt;&lt;p&gt;Habilité la extensión en ambas bases de datos.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; EXTENSION &lt;span style="color:#66d9ef"&gt;IF&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;NOT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;EXISTS&lt;/span&gt; dblink;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="verificación"&gt;Verificación
+&lt;/h3&gt;&lt;p&gt;Probé la conexión ejecutando una consulta remota desde &lt;code&gt;bd&lt;/code&gt; hacia &lt;code&gt;bd2&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;SELECT&lt;/span&gt; e.ename, t.dname, t.loc
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; emp e
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;JOIN&lt;/span&gt; dblink(
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;host=192.168.122.127 user=serjaii password=0191 dbname=prueba_db_2&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;SELECT deptno, dname, loc FROM dept&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;) &lt;span style="color:#66d9ef"&gt;AS&lt;/span&gt; t(deptno int, dname varchar, loc varchar)
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;ON&lt;/span&gt; e.deptno &lt;span style="color:#f92672"&gt;=&lt;/span&gt; t.deptno
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;WHERE&lt;/span&gt; e.deptno &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;20&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Resultado:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ename | dname | loc
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;-------+----------+--------
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; SMITH | RESEARCH | DALLAS
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; JONES | RESEARCH | DALLAS
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; SCOTT | RESEARCH | DALLAS
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ADAMS | RESEARCH | DALLAS
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; FORD | RESEARCH | DALLAS
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="3-interconexión-oracle-postgresql-heterogeneous-services"&gt;3. Interconexión Oracle-PostgreSQL (Heterogeneous Services)
+&lt;/h2&gt;&lt;p&gt;Esta configuración permite conectar desde Oracle hacia una base de datos PostgreSQL utilizando ODBC y Oracle Heterogeneous Services.&lt;/p&gt;
+&lt;h3 id="instalación-de-odbc-en-bd"&gt;Instalación de ODBC en bd
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt-get update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt-get install -y unixodbc unixodbc-dev odbc-postgresql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="configuración-odbc"&gt;Configuración ODBC
+&lt;/h3&gt;&lt;p&gt;Definí el Data Source Name (DSN) en &lt;code&gt;/etc/odbc.ini&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[PostgreSQL_bd2]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Description&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;PostgreSQL connection to bd2&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Driver&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;PostgreSQL Unicode&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Servername&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;192.168.122.127&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Port&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;5432&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Database&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;prueba_db_2&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Username&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;serjaii&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Password&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;0191&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verifiqué la conexión con &lt;code&gt;isql -v PostgreSQL_bd2&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="configuración-heterogeneous-services"&gt;Configuración Heterogeneous Services
+&lt;/h3&gt;&lt;p&gt;Creé el archivo de inicialización del gateway.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Archivo&lt;/strong&gt;: &lt;code&gt;/opt/oracle/homes/OraDBHome21cEE/hs/admin/initpgbd2.ora&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HS_FDS_CONNECT_INFO&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;PostgreSQL_bd2&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HS_FDS_TRACE_LEVEL&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;DEBUG&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Apuntar a la librería correcta es CRÍTICO para evitar errores&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HS_FDS_SHAREABLE_NAME&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/usr/lib/x86_64-linux-gnu/libodbc.so&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;set ODBCINI&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;/etc/odbc.ini&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;set LD_LIBRARY_PATH&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;/usr/lib/x86_64-linux-gnu/odbc&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="configuración-de-listener-y-tns"&gt;Configuración de Listener y TNS
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Archivo&lt;/strong&gt;: &lt;code&gt;listener.ora&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;SID_LIST_LISTENER&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SID_LIST =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SID_DESC =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (SID_NAME = pgbd2)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (ORACLE_HOME = /opt/oracle/product/21c/dbhome_1)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (PROGRAM = dg4odbc)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (ENVS=&amp;#34;ODBCINI=/home/oracle/odbc.ini&amp;#34;)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;Nota: Es importante asegurar que el usuario Oracle tenga acceso al archivo odbc.ini, a veces es necesario copiarlo a su home o definir la variable ENVS adecuadamente.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Archivo&lt;/strong&gt;: &lt;code&gt;tnsnames.ora&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PGBD2&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (DESCRIPTION =
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.122.126)(PORT = 1521))
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (CONNECT_DATA = (SID = pgbd2))
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; (HS = OK)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#e6db74"&gt; )&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Recargué el listener con &lt;code&gt;lsnrctl reload&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="crear-database-link-1"&gt;Crear Database Link
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;DATABASE&lt;/span&gt; LINK link_to_postgres
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;CONNECT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;serjaii&amp;#34;&lt;/span&gt; IDENTIFIED &lt;span style="color:#66d9ef"&gt;BY&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;0191&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;USING&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;PGBD2&amp;#39;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="solución-de-errores-comunes"&gt;Solución de Errores Comunes
+&lt;/h3&gt;&lt;p&gt;Durante el proceso encontré el error &lt;code&gt;ORA-28500&lt;/code&gt; con mensaje &lt;code&gt;[unixODBC][Driver Manager]Data source name not found&lt;/code&gt;. Esto se debió a que el proceso del listener no encontraba el archivo &lt;code&gt;odbc.ini&lt;/code&gt;. La solución fue configurar explícitamente la variable de entorno &lt;code&gt;ODBCINI&lt;/code&gt; en el &lt;code&gt;listener.ora&lt;/code&gt; o asegurar permisos de lectura para el usuario &lt;code&gt;oracle&lt;/code&gt;. También corregí el &lt;code&gt;HS_FDS_SHAREABLE_NAME&lt;/code&gt; para apuntar a &lt;code&gt;libodbc.so&lt;/code&gt; en lugar del driver de Postgres directamente.&lt;/p&gt;
+&lt;h3 id="verificación-1"&gt;Verificación
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;SELECT&lt;/span&gt; e.ename, e.job, e.sal
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; emp e
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;WHERE&lt;/span&gt; e.sal &lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; (&lt;span style="color:#66d9ef"&gt;SELECT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;AVG&lt;/span&gt;(&lt;span style="color:#e6db74"&gt;&amp;#34;sal&amp;#34;&lt;/span&gt;) &lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;emp&amp;#34;&lt;/span&gt;&lt;span style="color:#f92672"&gt;@&lt;/span&gt;link_to_postgres);
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Resultado:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ENAME JOB SAL
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;--------- --------- ---------
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;JONES MANAGER 2975
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;BLAKE MANAGER 2850
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;CLARK MANAGER 2450
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;SCOTT ANALYST 3000
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;KING PRESIDENT 5000
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;FORD ANALYST 3000
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="4-interconexión-postgresql-oracle"&gt;4. Interconexión PostgreSQL-Oracle
+&lt;/h2&gt;&lt;p&gt;Para conectar desde PostgreSQL hacia Oracle, utilicé la extensión &lt;code&gt;oracle_fdw&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="instalación"&gt;Instalación
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt-get install -y postgresql-server-dev-all build-essential unzip
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Descargar y compilar oracle_fdw&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;wget https://github.com/laurenz/oracle_fdw/archive/refs/heads/master.zip
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;unzip master.zip
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cd oracle_fdw-master
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;export ORACLE_HOME&lt;span style="color:#f92672"&gt;=&lt;/span&gt;/opt/oracle/product/21c/dbhome_1
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;make
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo make install
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Configuré las librerías dinámicas para que PostgreSQL encuentre las de Oracle:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;/opt/oracle/product/21c/dbhome_1/lib&amp;#34;&lt;/span&gt; | sudo tee /etc/ld.so.conf.d/oracle.conf
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ldconfig
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart postgresql
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="configuración-en-postgresql"&gt;Configuración en PostgreSQL
+&lt;/h3&gt;&lt;p&gt;En la base de datos &lt;code&gt;prueba_db&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; EXTENSION oracle_fdw;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;-- Crear el servidor foráneo
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; SERVER oracle_bd2 &lt;span style="color:#66d9ef"&gt;FOREIGN&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;DATA&lt;/span&gt; WRAPPER oracle_fdw
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;OPTIONS&lt;/span&gt; (dbserver &lt;span style="color:#e6db74"&gt;&amp;#39;//192.168.122.127:1521/ORCLPDB2&amp;#39;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;-- Mapeo de usuario
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;CREATE&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;USER&lt;/span&gt; MAPPING &lt;span style="color:#66d9ef"&gt;FOR&lt;/span&gt; serjaii SERVER oracle_bd2
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;OPTIONS&lt;/span&gt; (&lt;span style="color:#66d9ef"&gt;user&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#39;serjaii&amp;#39;&lt;/span&gt;, password &lt;span style="color:#e6db74"&gt;&amp;#39;0191&amp;#39;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;-- Importar esquema
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;IMPORT &lt;span style="color:#66d9ef"&gt;FOREIGN&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;SCHEMA&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;SERJAII&amp;#34;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;LIMIT&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;TO&lt;/span&gt; (&lt;span style="color:#e6db74"&gt;&amp;#34;EMP&amp;#34;&lt;/span&gt;, &lt;span style="color:#e6db74"&gt;&amp;#34;DEPT&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; SERVER oracle_bd2 &lt;span style="color:#66d9ef"&gt;INTO&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;public&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="verificación-2"&gt;Verificación
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-sql" data-lang="sql"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;SELECT&lt;/span&gt; ename, job, sal &lt;span style="color:#66d9ef"&gt;FROM&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;EMP&amp;#34;&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;WHERE&lt;/span&gt; deptno &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;10&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Resultado:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ename | job | sal
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;--------+-----------+---------
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; CLARK | MANAGER | 2450.00
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; KING | PRESIDENT | 5000.00
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; MILLER | CLERK | 1300.00
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description></item></channel></rss>
