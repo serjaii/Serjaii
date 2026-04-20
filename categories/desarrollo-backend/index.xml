@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Desarrollo Backend on SerjAii</title><link>https://sergiojimenez.org/categories/desarrollo-backend/</link><description>Recent content in Desarrollo Backend on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>es-es</language><lastBuildDate>Mon, 20 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://sergiojimenez.org/categories/desarrollo-backend/index.xml" rel="self" type="application/rss+xml"/><item><title>Construyendo una Plataforma Integral de Gestión Deportiva: Arquitectura, Algoritmos y DevOps</title><link>https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/</link><pubDate>Mon, 20 Apr 2026 00:00:00 +0000</pubDate><guid>https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/</guid><description>&lt;img src="https://sergiojimenez.org/cover.jpg" alt="Featured image of post Construyendo una Plataforma Integral de Gestión Deportiva: Arquitectura, Algoritmos y DevOps" /&gt;&lt;p&gt;El desarrollo de una aplicación capaz de escalar y ofrecer una experiencia de usuario fluida tanto en web como en dispositivos móviles requiere mucho más que código; exige un diseño de arquitectura sólido. Hoy quiero compartir los entresijos técnicos de mi plataforma integral de gestión de ligas de fútbol, un proyecto diseñado desde cero para centralizar competiciones, estadísticas de jugadores y calendarios en tiempo real.&lt;/p&gt;
+&lt;p&gt;Esta plataforma no es un simple sistema web. Su backend, construido en &lt;strong&gt;Python y Django&lt;/strong&gt;, expone una &lt;strong&gt;API REST&lt;/strong&gt; de alto rendimiento diseñada específicamente para integrarse de forma nativa con aplicaciones móviles desarrolladas en &lt;strong&gt;React Native&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;A continuación, exploro las características principales y las decisiones de diseño que dan vida a este ecosistema deportivo.&lt;/p&gt;
+&lt;h2 id="1-arquitectura-api-first-y-capa-de-servicios"&gt;1. Arquitectura API-First y Capa de Servicios
+&lt;/h2&gt;&lt;p&gt;Uno de los principales objetivos del proyecto fue garantizar la escalabilidad y limpieza del código. Para conseguirlo, la aplicación se diseñó siguiendo el patrón &lt;strong&gt;Service Layer (Capa de Servicios)&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;En lugar de mezclar la lógica de negocio con las respuestas HTTP, el sistema está dividido en tres niveles claros:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Capa de Datos:&lt;/strong&gt; Modelos de bases de datos altamente estructurados y divididos modularmente (jugadores, equipos, clasificaciones, partidos).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Capa de Servicios:&lt;/strong&gt; Aquí reside el &amp;ldquo;cerebro&amp;rdquo; matemático de la aplicación. Cálculos estadísticos y algoritmos complejos se ejecutan en módulos aislados, garantizando un código ágil y reutilizable.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Controladores API:&lt;/strong&gt; Usando Django REST Framework (DRF), las peticiones de los dispositivos móviles consultan la capa de servicios y reciben respuestas JSON ultraligeras, asegurando una fluidez máxima en la app.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="2-algoritmos-inteligentes-y-funciones-core"&gt;2. Algoritmos Inteligentes y Funciones Core
+&lt;/h2&gt;&lt;p&gt;Una plataforma deportiva premium requiere análisis en tiempo real para mantener a los usuarios involucrados. Para ello, se desarrollaron algoritmos específicos de alta complejidad:&lt;/p&gt;
+&lt;h3 id="el-algoritmo-de-estado-de-forma"&gt;El Algoritmo de &amp;ldquo;Estado de Forma&amp;rdquo;
+&lt;/h3&gt;&lt;p&gt;A semejanza de los videojuegos deportivos más populares, la plataforma cuenta con un sistema que evalúa algorítmicamente el rendimiento matemático de los jugadores en la vida real.
+El backend analiza el desempeño en los últimos partidos disputados y otorga una puntuación dinámica (&lt;em&gt;Rating&lt;/em&gt; 0-99). Este algoritmo evalúa:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Multiplicadores por hitos recientes (hat-tricks o dobletes).&lt;/li&gt;
+&lt;li&gt;Bonificaciones por constancia y rachas goleadoras ininterrumpidas.&lt;/li&gt;
+&lt;li&gt;Métricas del éxito colectivo (rachas de victorias o partidos invictos del equipo).
+Como resultado, la app destaca automáticamente a los jugadores que están &amp;ldquo;en racha&amp;rdquo; añadiendo etiquetas dinámicas a sus perfiles.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="generador-animado-de-sorteos"&gt;Generador Animado de Sorteos
+&lt;/h3&gt;&lt;p&gt;La administración del sistema no es solo texto y tablas. Para el sorteo de fases de grupos y eliminatorias, se diseñó un módulo visual asíncrono utilizando JavaScript puro. Este sistema emula un sorteo real estilo &amp;ldquo;Champions League&amp;rdquo;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Las &amp;ldquo;bolas&amp;rdquo; se extraen virtualmente mediante cálculos de probabilidad y animaciones en tiempo real.&lt;/li&gt;
+&lt;li&gt;A medida que el sorteo avanza visualmente, se comunican llamadas AJAX asíncronas con la API para que Django genere los emparejamientos y cuadrantes (&lt;em&gt;brackets&lt;/em&gt;) subyacentes de la competición.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="3-retención-de-usuarios-push-notifications"&gt;3. Retención de Usuarios: Push Notifications
+&lt;/h2&gt;&lt;p&gt;La proactividad de la aplicación móvil es crucial para la experiencia del jugador. La plataforma integra una comunicación directa con los smartphones a través de notificaciones push de &lt;strong&gt;OneSignal&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;El servidor asume la responsabilidad total de las comunicaciones a través de su propia API de notificaciones:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Alertas Globales:&lt;/strong&gt; Notifica a toda la base de usuarios cuando se inaugura una nueva temporada o torneo.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Segmentación Inteligente:&lt;/strong&gt; Gracias a filtros específicos en las peticiones HTTP, el sistema es capaz de avisar únicamente a los miembros de dos equipos si hay una modificación horaria en su partido o si el acta del resultado ha sido publicada.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="4-filosofía-devops-despliegue-cero-fricciones-cicd"&gt;4. Filosofía DevOps: Despliegue Cero Fricciones (CI/CD)
+&lt;/h2&gt;&lt;p&gt;Crear código de calidad es importante, pero ponerlo en producción de forma segura y automatizada marca la diferencia profesional.
+La plataforma cuenta con un pipeline de Integración y Despliegue Continuo (CI/CD) completamente automatizado a través de &lt;strong&gt;Jenkins&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Cuando el código está listo para salir a producción, se ejecutan de manera desatendida las siguientes fases en el VPS:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Sincronización:&lt;/strong&gt; Extracción segura de la última versión del repositorio remoto.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Dependencias:&lt;/strong&gt; Verificación e instalación de nuevos paquetes del sistema en Python.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Persistencia:&lt;/strong&gt; Aplicación de migraciones estructurales a la base de datos de manera segura y recolección de archivos estáticos.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Alta Disponibilidad:&lt;/strong&gt; Reinicio sistemático de los servicios web, garantizando que los usuarios móviles comiencen a consumir la nueva versión de la API sin caídas de servidor.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id="conclusión"&gt;Conclusión
+&lt;/h2&gt;&lt;p&gt;Desarrollar una plataforma desde cero hasta conectarla con dispositivos móviles exige dominar el espectro completo del desarrollo Full-Stack: modelado relacional, diseño de APIs ligeras, algoritmos analíticos asíncronos y flujos DevOps robustos. El resultado es un producto capaz de elevar la gestión del fútbol amateur al siguiente nivel tecnológico.&lt;/p&gt;</description></item></channel></rss>
