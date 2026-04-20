@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Django on SerjAii</title><link>https://sergiojimenez.org/tags/django/</link><description>Recent content in Django on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>es-es</language><lastBuildDate>Mon, 20 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://sergiojimenez.org/tags/django/index.xml" rel="self" type="application/rss+xml"/><item><title>Construyendo una Plataforma Integral de Gestión Deportiva: Arquitectura, Algoritmos y DevOps</title><link>https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/</link><pubDate>Mon, 20 Apr 2026 00:00:00 +0000</pubDate><guid>https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/</guid><description>&lt;img src="https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/cover.jpg" alt="Featured image of post Construyendo una Plataforma Integral de Gestión Deportiva: Arquitectura, Algoritmos y DevOps" /&gt;&lt;p&gt;El desarrollo de una aplicación capaz de escalar y ofrecer una experiencia de usuario fluida tanto en web como en dispositivos móviles requiere mucho más que código; exige un diseño de arquitectura sólido. Hoy quiero compartir los entresijos técnicos de mi plataforma integral de gestión de ligas de fútbol, un proyecto diseñado desde cero para centralizar competiciones, estadísticas de jugadores y calendarios en tiempo real.&lt;/p&gt;
 &lt;p&gt;Esta plataforma no es un simple sistema web. Su backend, construido en &lt;strong&gt;Python y Django&lt;/strong&gt;, expone una &lt;strong&gt;API REST&lt;/strong&gt; de alto rendimiento diseñada específicamente para integrarse de forma nativa con aplicaciones móviles desarrolladas en &lt;strong&gt;React Native&lt;/strong&gt;.&lt;/p&gt;
 &lt;p&gt;A continuación, exploro las características principales y las decisiones de diseño que dan vida a este ecosistema deportivo.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/standings.png"
+width="1256"
+height="688"
+srcset="https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/standings_hu_7a60d8257f4a6a09.png 480w, https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/standings_hu_eea8b1583cd87338.png 1024w"
+loading="lazy"
+alt="Tabla de Clasificación"
+class="gallery-image"
+data-flex-grow="182"
+data-flex-basis="438px"
+&gt;&lt;/p&gt;
 &lt;h2 id="1-arquitectura-api-first-y-capa-de-servicios"&gt;1. Arquitectura API-First y Capa de Servicios
 &lt;/h2&gt;&lt;p&gt;Uno de los principales objetivos del proyecto fue garantizar la escalabilidad y limpieza del código. Para conseguirlo, la aplicación se diseñó siguiendo el patrón &lt;strong&gt;Service Layer (Capa de Servicios)&lt;/strong&gt;.&lt;/p&gt;
 &lt;p&gt;En lugar de mezclar la lógica de negocio con las respuestas HTTP, el sistema está dividido en tres niveles claros:&lt;/p&gt;
@@ -26,6 +36,16 @@ Como resultado, la app destaca automáticamente a los jugadores que están &amp;
 &lt;li&gt;Las &amp;ldquo;bolas&amp;rdquo; se extraen virtualmente mediante cálculos de probabilidad y animaciones en tiempo real.&lt;/li&gt;
 &lt;li&gt;A medida que el sorteo avanza visualmente, se comunican llamadas AJAX asíncronas con la API para que Django genere los emparejamientos y cuadrantes (&lt;em&gt;brackets&lt;/em&gt;) subyacentes de la competición.&lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;&lt;img src="https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/admin.png"
+width="1256"
+height="688"
+srcset="https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/admin_hu_103465d6ec385df0.png 480w, https://sergiojimenez.org/post/arquitectura-api-rest-app-nativa-futbol/admin_hu_18d9c6392168fd01.png 1024w"
+loading="lazy"
+alt="Panel de Administración"
+class="gallery-image"
+data-flex-grow="182"
+data-flex-basis="438px"
+&gt;&lt;/p&gt;
 &lt;h2 id="3-retención-de-usuarios-push-notifications"&gt;3. Retención de Usuarios: Push Notifications
 &lt;/h2&gt;&lt;p&gt;La proactividad de la aplicación móvil es crucial para la experiencia del jugador. La plataforma integra una comunicación directa con los smartphones a través de notificaciones push de &lt;strong&gt;OneSignal&lt;/strong&gt;.&lt;/p&gt;
 &lt;p&gt;El servidor asume la responsabilidad total de las comunicaciones a través de su propia API de notificaciones:&lt;/p&gt;
