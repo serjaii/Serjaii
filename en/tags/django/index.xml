@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Django on SerjAii</title><link>https://sergiojimenez.org/en/tags/django/</link><description>Recent content in Django on SerjAii</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Mon, 20 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://sergiojimenez.org/en/tags/django/index.xml" rel="self" type="application/rss+xml"/><item><title>From Monolith to REST API: Architecture &amp; DevOps for a React Native Football App</title><link>https://sergiojimenez.org/en/post/rest-api-architecture-native-football-app/</link><pubDate>Mon, 20 Apr 2026 00:00:00 +0000</pubDate><guid>https://sergiojimenez.org/en/post/rest-api-architecture-native-football-app/</guid><description>&lt;img src="https://sergiojimenez.org/cover.jpg" alt="Featured image of post From Monolith to REST API: Architecture &amp; DevOps for a React Native Football App" /&gt;&lt;p&gt;Software development is never a static process; it evolves as user needs change. Recently, I undertook one of the most interesting architectural challenges in my main project (an advanced football league management platform): &lt;strong&gt;making the leap from a traditional monolithic Django web application to a mobile ecosystem with React Native.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This migration, developed under the &lt;code&gt;feature/react-native-xports-software&lt;/code&gt; branch, was far from a simple aesthetic update. It required a deep refactoring, implementing a scalable REST API, isolating business logic into a dedicated Service Layer, developing complex algorithms, and integrating a continuous deployment (CI/CD) pipeline using &lt;strong&gt;Jenkins&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Here is a breakdown of the most relevant technical aspects of this evolution.&lt;/p&gt;
+&lt;h2 id="1-the-challenge-decoupling-a-monolith"&gt;1. The Challenge: Decoupling a Monolith
+&lt;/h2&gt;&lt;p&gt;Initially, the project operated on the classic Django MTV (Model-Template-View) pattern. All HTML was rendered server-side, and views contained both HTTP response logic and heavy database queries.&lt;/p&gt;
+&lt;p&gt;For a React Native mobile app to consume data efficiently, a &lt;strong&gt;REST API&lt;/strong&gt; was strictly required. However, there was a catch: I couldn&amp;rsquo;t break the existing web functionality. The solution was adopting the &lt;strong&gt;Service Layer Design Pattern&lt;/strong&gt;.&lt;/p&gt;
+&lt;h3 id="separation-of-concerns-and-django-rest-framework-drf"&gt;Separation of Concerns and Django REST Framework (DRF)
+&lt;/h3&gt;&lt;p&gt;Instead of relying on massive views (the original &lt;code&gt;views.py&lt;/code&gt; had nearly a thousand lines of code), I divided the logic.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Modular Models:&lt;/strong&gt; The monolithic &lt;code&gt;models.py&lt;/code&gt; file was dissected into a package of cohesive modules (&lt;code&gt;alineaciones.py&lt;/code&gt;, &lt;code&gt;competicion.py&lt;/code&gt;, &lt;code&gt;partidos.py&lt;/code&gt;, etc.).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Service Layer:&lt;/strong&gt; All heavy lifting was extracted into files like &lt;code&gt;home_service.py&lt;/code&gt; and &lt;code&gt;equipo_service.py&lt;/code&gt;. This layer is agnostic; it doesn&amp;rsquo;t care if it&amp;rsquo;s called from a web view, a CLI command, or an API endpoint.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;API Controllers:&lt;/strong&gt; Using Django REST Framework, I created &lt;code&gt;torneo/api/views.py&lt;/code&gt;. These controllers (&lt;em&gt;ViewSets&lt;/em&gt;) are extremely lightweight; their only mission is to receive the HTTP request, call the Service Layer, and return JSON via &lt;em&gt;Serializers&lt;/em&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id="2-complex-algorithmic-features"&gt;2. Complex Algorithmic Features
+&lt;/h2&gt;&lt;p&gt;A sports app isn&amp;rsquo;t just a standard &amp;ldquo;CRUD&amp;rdquo; (Create, Read, Update, Delete) application; it requires deep data analysis and algorithms.&lt;/p&gt;
+&lt;h3 id="form-and-streak-algorithm-racha_servicepy"&gt;Form and Streak Algorithm (&lt;code&gt;racha_service.py&lt;/code&gt;)
+&lt;/h3&gt;&lt;p&gt;To show which players are &amp;ldquo;on fire&amp;rdquo;, I implemented a service that algorithmically evaluates recent performance. The algorithm analyzes the last 5 matches played, granting &lt;em&gt;Scores&lt;/em&gt; for specific milestones:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Hat-tricks and Braces:&lt;/strong&gt; Multipliers for recent goals.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Consistency:&lt;/strong&gt; Bonuses for scoring streaks across consecutive matches.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Team Performance:&lt;/strong&gt; Players are rewarded if their team maintains winning or undefeated streaks.
+This calculation translates into a &lt;strong&gt;dynamic Rating (0-99)&lt;/strong&gt; and automated descriptive tags (e.g., &lt;em&gt;&amp;ldquo;Recent Hat-trick&amp;rdquo;&lt;/em&gt;, &lt;em&gt;&amp;ldquo;3 matches undefeated&amp;rdquo;&lt;/em&gt;), delivering gaming-style metrics to the app in real-time.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="animated-draw-generator-champions-league-style"&gt;Animated Draw Generator (Champions League Style)
+&lt;/h3&gt;&lt;p&gt;In the admin panel, generating a boring calendar isn&amp;rsquo;t enough. Using Vanilla JavaScript, I developed &lt;code&gt;generador_animado.js&lt;/code&gt;, which visually simulates a live tournament draw.
+Leveraging an event queue (&lt;code&gt;colaAnimacion&lt;/code&gt;), promises, and DOM manipulation via AJAX, the script draws virtual &amp;ldquo;balls&amp;rdquo;, pairing teams or assigning them to groups with smooth visual transitions, before making the final database commit to Django to generate the schedule (&lt;code&gt;calendario_service.py&lt;/code&gt;).&lt;/p&gt;
+&lt;h2 id="3-user-retention-push-notifications"&gt;3. User Retention: Push Notifications
+&lt;/h2&gt;&lt;p&gt;A modern mobile app needs to be proactive. To achieve this, we integrated the &lt;strong&gt;OneSignal&lt;/strong&gt; REST API.
+From Django, using the &lt;code&gt;notifications.py&lt;/code&gt; module, the server automatically dispatches JSON payloads to OneSignal&amp;rsquo;s servers.&lt;/p&gt;
+&lt;p&gt;This allows us to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Global Notifications:&lt;/strong&gt; Alert all registered users when a new tournament kicks off.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Tag-based Segmentation:&lt;/strong&gt; If there is a schedule change or match results are published, the backend can send the alert exclusively to the devices of players belonging to the involved teams by using specific &lt;em&gt;filters&lt;/em&gt; in the HTTP request.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="4-devops-and-cicd-automated-deployment-with-jenkins"&gt;4. DevOps and CI/CD: Automated Deployment with Jenkins
+&lt;/h2&gt;&lt;p&gt;A project of this scale cannot rely on manual deployments by copying files over FTP or running SSH commands by hand. This is where the DevOps mindset comes in.&lt;/p&gt;
+&lt;p&gt;To achieve a &amp;ldquo;Zero Friction&amp;rdquo; philosophy, the repository includes a declarative &lt;code&gt;Jenkinsfile&lt;/code&gt; that orchestrates the entire deployment to production automatically. When code reaches the &lt;code&gt;main&lt;/code&gt; branch, Jenkins executes the following phases via a secure SSH agent:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Repository Pull:&lt;/strong&gt; Synchronizes the source code on the VPS.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Dependency Management:&lt;/strong&gt; Executes &lt;code&gt;pip install -r requirements.txt&lt;/code&gt; to ensure all Python libraries are up to date.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Persistence &amp;amp; Statics:&lt;/strong&gt; Automatically runs &lt;code&gt;manage.py migrate&lt;/code&gt; (to safely update the database schema) and &lt;code&gt;collectstatic&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Service Restart:&lt;/strong&gt; Finally, it interacts with &lt;code&gt;systemctl&lt;/code&gt; at the OS level (Linux) to restart the &lt;code&gt;uwsgi&lt;/code&gt; or &lt;code&gt;gunicorn&lt;/code&gt; service, bringing up the new version with zero downtime.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id="conclusion"&gt;Conclusion
+&lt;/h2&gt;&lt;p&gt;Migrating from a classic Django application to an API-First architecture tailored for React Native proves that a solid architectural foundation is vital. The extensive use of the Service Layer pattern, efficient backend algorithms, real-time push communications, and CI/CD automation with Jenkins have transformed a university project into a Full-Stack ecosystem worthy of any production environment.&lt;/p&gt;</description></item></channel></rss>
